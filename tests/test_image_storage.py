@@ -4,11 +4,6 @@ testing the `save_image_blob` method using pytest and unittest's mocking
 capabilities. The tests verify that the method correctly stores images as 
 BLOBs in the database, both with and without OCR text.
 
-Fixtures:
-    mock_db: Mocks the SQLite database connection and cursor.
-    mock_cv2: Mocks the `cv2.imencode` function to simulate image encoding 
-        without using actual image files.
-
 Tests:
     test_save_image_blob: Tests the `save_image_blob` method to ensure it 
         correctly inserts an image BLOB with associated processing type and 
@@ -28,103 +23,97 @@ Example usage:
 import os
 import sys
 
-# Ensure the src directory is in the path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
+import pytest
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 import sqlite3
 from unittest.mock import MagicMock, patch
 
 import cv2
 import numpy as np
-import pytest
 
-from src.image_storage import ImageStorage
+from image_storage import ImageStorage
 
 
-@pytest.fixture
-def mock_db():
+@patch("image_storage.cv2.imencode", return_value=(True, MagicMock()))
+@patch("image_storage.sqlite3.connect")
+def test_save_image_blob(mock_connect, mock_imencode):
     """
-    Fixture to mock the SQLite database connection and cursor.
-
-    Returns:
-        MagicMock: Mocked SQLite cursor object.
-    """
-    with patch("sqlite3.connect") as mock_connect:
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_connect.return_value = mock_conn
-        mock_conn.cursor.return_value = mock_cursor
-        yield mock_cursor
-
-
-@pytest.fixture
-def mock_cv2():
-    """
-    Fixture to mock the cv2 library functions.
-
-    Returns:
-        MagicMock: Mocked `cv2.imencode` function.
-    """
-    with patch("cv2.imencode") as mock_imencode:
-        mock_imencode.return_value = (True, np.array([1, 2, 3]))
-        yield mock_imencode
-
-
-def test_save_image_blob(mock_db, mock_cv2):
-    """
-    Test the `save_image_blob` method of the `ImageStorage` class.
+    Test the `save_image_blob` method of the `ImageStorage` class to ensure
+    it correctly inserts an image BLOB with associated processing type and
+    OCR text into the database.
 
     Args:
-        mock_db (MagicMock): Mocked SQLite cursor object.
-        mock_cv2 (MagicMock): Mocked `cv2.imencode` function.
+        mock_connect (MagicMock): Mocked SQLite connection object.
+        mock_imencode (MagicMock): Mocked `cv2.imencode` function.
 
     Raises:
         AssertionError: If the method does not insert the expected data into
-            the database.
+            the database or if the database commit and close operations are
+            not called.
     """
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_connect.return_value = mock_conn
+    mock_conn.cursor.return_value = mock_cursor
+
     storage = ImageStorage(db_path="test.db")
     pdf_data_id = 1
     image = np.zeros((100, 100, 3), dtype=np.uint8)
     processing_type = "grayscale"
     ocr_text = "sample OCR text"
 
-    storage.save_image_blob(pdf_data_id, image, processing_type, ocr_text)
+    storage.save_image_blob(pdf_data_id, processing_type, image, ocr_text)
 
-    mock_db.execute.assert_called_once_with(
+    mock_cursor.execute.assert_called_once_with(
         """
-        INSERT INTO ocr_images (pdf_data_id, image_blob, ocr_text, processing_type)
+        INSERT INTO ocr_images (pdf_data_id, processing_type, image_blob, ocr_text)
         VALUES (?, ?, ?, ?)""",
-        (pdf_data_id, mock_cv2.return_value[1].tobytes(), ocr_text, processing_type),
+        (
+            pdf_data_id,
+            processing_type,
+            mock_imencode.return_value[1].tobytes(),
+            ocr_text,
+        ),
     )
-    mock_db.connection.commit.assert_called_once()
-    mock_db.connection.close.assert_called_once()
+    mock_conn.commit.assert_called_once()
+    mock_conn.close.assert_called_once()
 
 
-def test_save_image_blob_without_ocr_text(mock_db, mock_cv2):
+@patch("image_storage.cv2.imencode", return_value=(True, MagicMock()))
+@patch("image_storage.sqlite3.connect")
+def test_save_image_blob_without_ocr_text(mock_connect, mock_imencode):
     """
-    Test the `save_image_blob` method of the `ImageStorage` class without
-    OCR text.
+    Test the `save_image_blob` method of the `ImageStorage` class to ensure
+    it correctly inserts an image BLOB with associated processing type into
+    the database without OCR text.
 
     Args:
-        mock_db (MagicMock): Mocked SQLite cursor object.
-        mock_cv2 (MagicMock): Mocked `cv2.imencode` function.
+        mock_connect (MagicMock): Mocked SQLite connection object.
+        mock_imencode (MagicMock): Mocked `cv2.imencode` function.
 
     Raises:
         AssertionError: If the method does not insert the expected data into
-            the database when no OCR text is provided.
+            the database or if the database commit and close operations are
+            not called.
     """
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_connect.return_value = mock_conn
+    mock_conn.cursor.return_value = mock_cursor
+
     storage = ImageStorage(db_path="test.db")
     pdf_data_id = 1
     image = np.zeros((100, 100, 3), dtype=np.uint8)
     processing_type = "grayscale"
 
-    storage.save_image_blob(pdf_data_id, image, processing_type)
+    storage.save_image_blob(pdf_data_id, processing_type, image)
 
-    mock_db.execute.assert_called_once_with(
+    mock_cursor.execute.assert_called_once_with(
         """
-        INSERT INTO ocr_images (pdf_data_id, image_blob, ocr_text, processing_type)
+        INSERT INTO ocr_images (pdf_data_id, processing_type, image_blob, ocr_text)
         VALUES (?, ?, ?, ?)""",
-        (pdf_data_id, mock_cv2.return_value[1].tobytes(), None, processing_type),
+        (pdf_data_id, processing_type, mock_imencode.return_value[1].tobytes(), None),
     )
-    mock_db.connection.commit.assert_called_once()
-    mock_db.connection.close.assert_called_once()
+    mock_conn.commit.assert_called_once()
+    mock_conn.close.assert_called_once()

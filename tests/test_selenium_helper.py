@@ -42,6 +42,7 @@ Modules:
 Example usage:
     pytest test_selenium_helper.py
 """
+
 import os
 import sys
 
@@ -54,7 +55,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from selenium_helper import (WebAutomationHelper)
+from selenium_helper import WebAutomationHelper
 
 
 @pytest.fixture

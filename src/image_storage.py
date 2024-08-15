@@ -21,16 +21,16 @@ class ImageStorage:
         """
         self.db_path = db_path
 
-    def save_image_blob(self, pdf_data_id, image, processing_type, ocr_text=None):
+    def save_image_blob(self, pdf_data_id, processing_type, image, ocr_text=None):
         """
         Store an image as a BLOB in the database with its associated processing
         type and optional OCR text.
 
         Args:
             pdf_data_id (int): The ID of the corresponding PDF data record.
-            image (numpy.ndarray): The image data to be stored.
             processing_type (str): The type of image processing applied (e.g.,
                 "grayscale", "binarized").
+            image (numpy.ndarray): The image data to be stored.
             ocr_text (str, optional): The OCR text extracted from the image,
                 if any. Defaults to None.
 
@@ -73,4 +73,4 @@ class ImageStorage:
 #     pdf_data_id = 1
 #     image = cv2.imread("path/to/your/image.png")  # Replace with actual image data
 #     processing_type = "grayscale"
-#     storage.save_image_blob(pdf_data_id, image, processing_type)
+#     storage.save_image_blob(pdf_data_id, processing_type, image)

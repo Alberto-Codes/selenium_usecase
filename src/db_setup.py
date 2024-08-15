@@ -1,18 +1,19 @@
 import sqlite3
 
+
 def setup_database(db_path="check_recon.db"):
     """
-    Sets up the database with the necessary tables for storing original data 
-    and PDF data. Creates tables `original_data` and `pdf_data` if they do 
+    Sets up the database with the necessary tables for storing original data
+    and PDF data. Creates tables `original_data` and `pdf_data` if they do
     not already exist.
 
     Args:
-        db_path (str): The file path to the SQLite database. Defaults to 
+        db_path (str): The file path to the SQLite database. Defaults to
             "check_recon.db".
 
     Returns:
         sqlite3.Connection: A connection object to the SQLite database.
-    
+
     The `original_data` table contains the following fields:
         - id: Primary key, auto-incremented.
         - uuid: Unique identifier for each record.
@@ -35,7 +36,8 @@ def setup_database(db_path="check_recon.db"):
     cursor = conn.cursor()
 
     # Table to store original data with UUID or ID
-    cursor.execute("""
+    cursor.execute(
+        """
     CREATE TABLE IF NOT EXISTS original_data (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         uuid TEXT UNIQUE,
@@ -46,10 +48,12 @@ def setup_database(db_path="check_recon.db"):
         payee TEXT,
         status TEXT DEFAULT 'pending'
     )
-    """)
+    """
+    )
 
     # Table to store PDF data as BLOBs and file paths
-    cursor.execute("""
+    cursor.execute(
+        """
     CREATE TABLE IF NOT EXISTS pdf_data (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         original_data_id INTEGER,
@@ -58,7 +62,8 @@ def setup_database(db_path="check_recon.db"):
         pdf_file_path TEXT,
         FOREIGN KEY(original_data_id) REFERENCES original_data(id)
     )
-    """)
+    """
+    )
 
     conn.commit()
     return conn

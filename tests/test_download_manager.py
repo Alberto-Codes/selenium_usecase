@@ -38,11 +38,8 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
-from download_manager import (
-    download_pdf_with_selenium,
-    load_config,
-    process_rows_for_download,
-)
+from download_manager import (download_pdf_with_selenium, load_config,
+                              process_rows_for_download)
 
 
 @pytest.fixture

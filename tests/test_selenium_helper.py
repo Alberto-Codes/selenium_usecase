@@ -42,7 +42,11 @@ Modules:
 Example usage:
     pytest test_selenium_helper.py
 """
+import os
+import sys
 
+# Ensure the src directory is in the path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -50,7 +54,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from src.selenium_helper import WebAutomationHelper, load_config, process_use_cases
+from selenium_helper import (WebAutomationHelper)
 
 
 @pytest.fixture
@@ -148,7 +152,7 @@ def test_wait_for_element(mock_driver, config):
         mock_driver (MagicMock): Mocked Selenium WebDriver.
         config (dict): Configuration dictionary.
     """
-    with patch("src.selenium_helper.WebDriverWait") as MockWebDriverWait:
+    with patch("selenium_helper.WebDriverWait") as MockWebDriverWait:
         helper = WebAutomationHelper(config)
         helper.wait_for_element("search_button")
         MockWebDriverWait.return_value.until.assert_called_once()

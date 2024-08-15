@@ -11,7 +11,9 @@ elements = driver.find_elements(By.XPATH, "//*")
 # Print out all visible elements
 for element in elements:
     if element.is_displayed():
-        print(f"Tag: {element.tag_name}, Text: {element.text}, ID: {element.get_attribute('id')}, Class: {element.get_attribute('class')}")
+        print(
+            f"Tag: {element.tag_name}, Text: {element.text}, ID: {element.get_attribute('id')}, Class: {element.get_attribute('class')}"
+        )
 
 # Close the browser after you are done
 driver.quit()

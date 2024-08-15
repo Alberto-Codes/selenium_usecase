@@ -18,7 +18,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	//"postCreateCommand": "apt-get update && apt-get install -y poppler-utils",
+	"postCreateCommand": "apt-get update && apt-get install -y libgl1-mesa-glx",
 
 	// Configure tool-specific properties.
 	// "customizations": {},

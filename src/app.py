@@ -1,8 +1,8 @@
+import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import pandas as pd
+from selenium.webdriver.support.ui import WebDriverWait
 
 # Initialize WebDriver
 driver = webdriver.Chrome()  # Adjust if using a different browser
@@ -12,7 +12,9 @@ driver.get("https://example-java-website.com")  # Replace with the actual URL
 
 # Wait for the page to fully load and the target button to be clickable
 wait = WebDriverWait(driver, 20)
-button = wait.until(EC.element_to_be_clickable((By.ID, "button_id")))  # Replace with actual button id
+button = wait.until(
+    EC.element_to_be_clickable((By.ID, "button_id"))
+)  # Replace with actual button id
 
 # Click the button
 button.click()
@@ -22,9 +24,9 @@ df = pd.read_csv("data.csv")  # Adjust according to your dataset source
 
 # Iterate through the dataset and input values
 for index, row in df.iterrows():
-    acct_number = row['acctnumber']
-    check_number = row['checknumber']
-    amount = row['amount']
+    acct_number = row["acctnumber"]
+    check_number = row["checknumber"]
+    amount = row["amount"]
 
     # Wait for and input values into respective fields
     acct_input = wait.until(EC.visibility_of_element_located((By.ID, "acct_input_id")))

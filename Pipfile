@@ -8,6 +8,7 @@ pandas = "*"
 openpyxl = "*"
 selenium = "*"
 pdf2image = "*"
+opencv-python = "*"
 
 [dev-packages]
 black = "*"

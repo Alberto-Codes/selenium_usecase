@@ -1,5 +1,6 @@
 from pdf2image import convert_from_bytes
 
+
 class PDFConverter:
     """
     A class to handle the conversion of a PDF stored as a BLOB to images.
@@ -21,7 +22,7 @@ class PDFConverter:
         """
         Convert the PDF BLOB to images.
 
-        This method converts the PDF BLOB into a list of images, where each 
+        This method converts the PDF BLOB into a list of images, where each
         page of the PDF is represented as an image.
 
         Returns:
@@ -29,6 +30,7 @@ class PDFConverter:
         """
         images = convert_from_bytes(self.pdf_blob)
         return images
+
 
 # Example usage:
 # pdf_converter = PDFConverter(pdf_blob)

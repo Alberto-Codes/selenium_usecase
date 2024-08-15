@@ -23,13 +23,15 @@ Example usage:
 """
 
 import os
-import sys
 import sqlite3
+import sys
+
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 from db_setup import setup_database
+
 
 @pytest.fixture(scope="module")
 def db_connection():
@@ -45,6 +47,7 @@ def db_connection():
     conn.close()
     os.remove(test_db_path)
 
+
 def test_database_creation(db_connection):
     """
     Test that the SQLite database file is created.
@@ -56,6 +59,7 @@ def test_database_creation(db_connection):
         AssertionError: If the database file does not exist.
     """
     assert os.path.exists("test_check_recon.db")
+
 
 def test_tables_creation(db_connection):
     """

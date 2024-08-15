@@ -19,11 +19,15 @@ Modules:
 Example usage:
     pytest test_pdf_converter.py
 """
+
 import os
 import sys
+
 import pytest
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 from pdf_converter import PDFConverter
+
 
 @pytest.fixture
 def sample_pdf_blob():
@@ -35,39 +39,40 @@ def sample_pdf_blob():
     """
     # A valid sample PDF BLOB for testing
     return (
-        b'%PDF-1.4\n'
-        b'1 0 obj\n'
-        b'<< /Type /Catalog /Pages 2 0 R >>\n'
-        b'endobj\n'
-        b'2 0 obj\n'
-        b'<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n'
-        b'endobj\n'
-        b'3 0 obj\n'
-        b'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R >>\n'
-        b'endobj\n'
-        b'4 0 obj\n'
-        b'<< /Length 55 >>\n'
-        b'stream\n'
-        b'BT\n'
-        b'/F1 24 Tf\n'
-        b'100 700 Td\n'
-        b'(Hello, World!) Tj\n'
-        b'ET\n'
-        b'endstream\n'
-        b'endobj\n'
-        b'xref\n'
-        b'0 5\n'
-        b'0000000000 65535 f \n'
-        b'0000000010 00000 n \n'
-        b'0000000053 00000 n \n'
-        b'0000000102 00000 n \n'
-        b'0000000175 00000 n \n'
-        b'trailer\n'
-        b'<< /Root 1 0 R /Size 5 >>\n'
-        b'startxref\n'
-        b'256\n'
-        b'%%EOF\n'
+        b"%PDF-1.4\n"
+        b"1 0 obj\n"
+        b"<< /Type /Catalog /Pages 2 0 R >>\n"
+        b"endobj\n"
+        b"2 0 obj\n"
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n"
+        b"endobj\n"
+        b"3 0 obj\n"
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R >>\n"
+        b"endobj\n"
+        b"4 0 obj\n"
+        b"<< /Length 55 >>\n"
+        b"stream\n"
+        b"BT\n"
+        b"/F1 24 Tf\n"
+        b"100 700 Td\n"
+        b"(Hello, World!) Tj\n"
+        b"ET\n"
+        b"endstream\n"
+        b"endobj\n"
+        b"xref\n"
+        b"0 5\n"
+        b"0000000000 65535 f \n"
+        b"0000000010 00000 n \n"
+        b"0000000053 00000 n \n"
+        b"0000000102 00000 n \n"
+        b"0000000175 00000 n \n"
+        b"trailer\n"
+        b"<< /Root 1 0 R /Size 5 >>\n"
+        b"startxref\n"
+        b"256\n"
+        b"%%EOF\n"
     )
+
 
 def test_initialization(sample_pdf_blob):
     """
@@ -77,11 +82,12 @@ def test_initialization(sample_pdf_blob):
         sample_pdf_blob (bytes): The sample PDF BLOB fixture.
 
     Raises:
-        AssertionError: If the PDF BLOB is not correctly assigned to the 
+        AssertionError: If the PDF BLOB is not correctly assigned to the
             `pdf_blob` attribute of the `PDFConverter` instance.
     """
     pdf_converter = PDFConverter(sample_pdf_blob)
     assert pdf_converter.pdf_blob == sample_pdf_blob
+
 
 def test_convert_to_images(sample_pdf_blob):
     """
@@ -91,7 +97,7 @@ def test_convert_to_images(sample_pdf_blob):
         sample_pdf_blob (bytes): The sample PDF BLOB fixture.
 
     Raises:
-        AssertionError: If the method does not return a list of images or if 
+        AssertionError: If the method does not return a list of images or if
             any image in the list does not have a `size` attribute.
     """
     pdf_converter = PDFConverter(sample_pdf_blob)
@@ -99,4 +105,4 @@ def test_convert_to_images(sample_pdf_blob):
     assert isinstance(images, list)
     assert len(images) > 0
     for image in images:
-        assert hasattr(image, 'size')  # Check if the image has a size attribute
+        assert hasattr(image, "size")  # Check if the image has a size attribute

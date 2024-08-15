@@ -1,11 +1,13 @@
-import duckdb
-import cv2
-import numpy as np
 import io
+
+import cv2
+import duckdb
+import numpy as np
+
 
 class RecordInspector:
     """
-    A class to inspect records from a DuckDB database, specifically focusing on 
+    A class to inspect records from a DuckDB database, specifically focusing on
     displaying images stored as BLOBs.
 
     Attributes:
@@ -13,7 +15,7 @@ class RecordInspector:
         table_name (str): The name of the table from which to fetch records.
         conn (duckdb.DuckDBPyConnection): The connection object to the DuckDB database.
         batch_size (int): The number of records to fetch in each batch.
-        offset (int): The offset for fetching records, used to navigate through 
+        offset (int): The offset for fetching records, used to navigate through
             batches.
 
     Methods:
@@ -29,9 +31,9 @@ class RecordInspector:
         Initialize the RecordInspector with the database path and table name.
 
         Args:
-            db_path (str): The path to the DuckDB database file. Defaults to 
+            db_path (str): The path to the DuckDB database file. Defaults to
                 "use_cases.duckdb".
-            table_name (str): The name of the table from which to fetch records. 
+            table_name (str): The name of the table from which to fetch records.
                 Defaults to "ocr_images".
         """
         self.db_path = db_path
@@ -45,7 +47,7 @@ class RecordInspector:
         Fetch a batch of records from the database.
 
         Returns:
-            list: A list of tuples, each containing the record ID, PDF data ID, 
+            list: A list of tuples, each containing the record ID, PDF data ID,
                 processing type, and image BLOB.
         """
         query = f"""
@@ -62,16 +64,18 @@ class RecordInspector:
         Display records and their associated images.
 
         Args:
-            records (list): A list of tuples, each containing the record ID, 
+            records (list): A list of tuples, each containing the record ID,
                 PDF data ID, processing type, and image BLOB.
 
         Notes:
-            The images are displayed using OpenCV's imshow function. Press any 
+            The images are displayed using OpenCV's imshow function. Press any
             key to close the image display window.
         """
         for record in records:
             record_id, pdf_data_id, processing_type, image_blob = record
-            print(f"Record ID: {record_id}, PDF Data ID: {pdf_data_id}, Processing Type: {processing_type}")
+            print(
+                f"Record ID: {record_id}, PDF Data ID: {pdf_data_id}, Processing Type: {processing_type}"
+            )
 
             # Convert the BLOB back to an image
             image_array = np.frombuffer(image_blob, dtype=np.uint8)
@@ -114,18 +118,23 @@ class RecordInspector:
         """
         self.conn.close()
 
+
 # Example usage:
 if __name__ == "__main__":
     inspector = RecordInspector(db_path="use_cases.duckdb")
 
     while True:
-        command = input("Enter 'n' for next batch, 'p' for previous batch, 'q' to quit: ").strip().lower()
+        command = (
+            input("Enter 'n' for next batch, 'p' for previous batch, 'q' to quit: ")
+            .strip()
+            .lower()
+        )
 
-        if command == 'n':
+        if command == "n":
             inspector.next_batch()
-        elif command == 'p':
+        elif command == "p":
             inspector.previous_batch()
-        elif command == 'q':
+        elif command == "q":
             inspector.close()
             break
         else:

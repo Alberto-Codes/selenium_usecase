@@ -65,5 +65,16 @@ def setup_database(db_path="check_recon.db"):
     """
     )
 
+    # Add a table to store images as BLOBs along with their OCR text
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS ocr_images (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pdf_data_id INTEGER,
+        image_blob BLOB,
+        ocr_text TEXT,
+        FOREIGN KEY(pdf_data_id) REFERENCES pdf_data(id)
+    )
+    """)
+
     conn.commit()
     return conn

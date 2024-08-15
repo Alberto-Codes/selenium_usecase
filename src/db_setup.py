@@ -70,6 +70,7 @@ def setup_database(db_path="check_recon.db"):
     CREATE TABLE IF NOT EXISTS ocr_images (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         pdf_data_id INTEGER,
+        processing_type TEXT
         image_blob BLOB,
         ocr_text TEXT,
         FOREIGN KEY(pdf_data_id) REFERENCES pdf_data(id)

@@ -8,6 +8,7 @@
 		"ghcr.io/devcontainers-contrib/features/black:2": {},
 		"ghcr.io/devcontainers-contrib/features/isort:2": {},
 		"ghcr.io/devcontainers-contrib/features/pipenv:2": {}
+		,"ghcr.io/devcontainers-contrib/features/poppler-utils-apt-get:1": {}
 	},
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
@@ -17,12 +18,20 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "pip3 install --user -r requirements.txt",
+	//"postCreateCommand": "apt-get update && apt-get install -y poppler-utils",
 
 	// Configure tool-specific properties.
 	// "customizations": {},
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"
-	"postAttachCommand": "pipenv install --dev && pipenv shell"
+	"postAttachCommand": "pipenv install --dev && pipenv shell",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"GitHub.copilot-chat",
+				"eamodio.gitlens"
+			]
+		}
+	}
 }

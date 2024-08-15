@@ -1,8 +1,47 @@
+"""
+This module contains functions and classes for processing and managing PDF 
+downloads, conversions, and storage in a database. The script is designed to 
+automate the process of downloading PDFs, converting them to images, and 
+storing both the PDFs and images as BLOBs in an SQLite database.
+
+Functions:
+    load_config(config_file):
+        Load the configuration from a JSON file.
+
+    get_db_connection(db_path):
+        Get a connection to the SQLite database.
+
+    process_rows_for_download(db_path="data/check_recon.db", download_directory="data/stored_pdfs"):
+        Processes rows with a 'pending' status from the `original_data` table in
+        the database. For each row, a PDF is downloaded using Selenium, stored as
+        a BLOB in the database, and the corresponding file is saved in the
+        specified directory.
+
+    download_pdf_with_selenium(acct_number, check_number, amount, date, config_file="../config/config.json"):
+        Automates the process of downloading a PDF using Selenium based on the
+        provided account number, check number, amount, and date.
+
+Modules:
+    - selenium_helper: Contains the `WebAutomationHelper` class used for Selenium
+      automation tasks.
+    - pdf_converter: Contains the `PDFConverter` class used to convert PDF BLOBs
+      into images.
+    - image_storage: Contains the `ImageStorage` class used to store images as
+      BLOBs in the database.
+
+Example usage:
+    process_rows_for_download("data/check_recon.db", "data/stored_pdfs")
+"""
+
 import json
 import os
 import shutil
 import sqlite3
 
+from pdf2image import convert_from_bytes
+
+from image_storage import ImageStorage
+from pdf_converter import PDFConverter
 from selenium_helper import WebAutomationHelper
 
 
@@ -46,9 +85,9 @@ def process_rows_for_download(
 
     Args:
         db_path (str): The file path to the SQLite database. Defaults to
-            "use_cases.db".
+            "data/check_recon.db".
         download_directory (str): The directory where downloaded PDFs will be
-            stored. Defaults to "stored_pdfs".
+            stored. Defaults to "data/stored_pdfs".
 
     Returns:
         None
@@ -60,7 +99,9 @@ def process_rows_for_download(
         3. Renames the downloaded PDF and moves it to the specified directory.
         4. Stores the PDF as a BLOB in the `pdf_data` table and updates the
            file path.
-        5. Updates the status of the original data to 'downloaded' or 'failed'
+        5. Converts the PDF BLOB to images.
+        6. Stores the images as BLOBs in the database.
+        7. Updates the status of the original data to 'downloaded' or 'failed'
            in case of an error.
 
     Notes:
@@ -73,7 +114,7 @@ def process_rows_for_download(
         'failed' in the database.
 
     Example usage:
-        process_rows_for_download("use_cases.db")
+        process_rows_for_download("data/check_recon.db", "data/stored_pdfs")
     """
     # Setup the database connection
     conn, cursor = get_db_connection(db_path)
@@ -106,12 +147,22 @@ def process_rows_for_download(
             # Store the PDF as a BLOB and save the file path in the database
             with open(new_pdf_path, "rb") as file:
                 pdf_blob = file.read()
-                cursor.execute(
-                    """
-                INSERT INTO pdf_data (uuid, pdf_name, pdf_blob, pdf_file_path)
+
+            cursor.execute(
+                """INSERT INTO pdf_data (uuid, pdf_name, pdf_blob, pdf_file_path)
                 VALUES (?, ?, ?, ?)""",
-                    (uuid, unique_pdf_name, pdf_blob, new_pdf_path),
-                )
+                (uuid, unique_pdf_name, pdf_blob, new_pdf_path),
+            )
+            pdf_data_id = cursor.lastrowid
+
+            # Convert the PDF BLOB to images
+            pdf_converter = PDFConverter(pdf_blob)
+            images = pdf_converter.convert_to_images()
+
+            # Store the images as BLOBs in the database
+            image_storage = ImageStorage(db_path=db_path)
+            for image in images:
+                image_storage.save_image_blob(pdf_data_id, "processed", image)
 
             # Update the status of the original data to 'downloaded'
             cursor.execute(

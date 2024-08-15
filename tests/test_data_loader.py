@@ -1,3 +1,28 @@
+"""
+This script contains unit tests for the `load_dataset_into_db` function 
+and the `setup_database` function using the pytest framework. The tests 
+verify that the functions work correctly by creating temporary 
+spreadsheets and databases, loading data into the database, and 
+validating the results.
+
+Fixtures:
+    temp_spreadsheet: Creates a temporary Excel spreadsheet with sample 
+        data for testing.
+    temp_db: Creates a temporary SQLite database for testing.
+
+Tests:
+    test_load_dataset_into_db: Tests the `load_dataset_into_db` function 
+        by verifying that the data is correctly loaded into the database 
+        and the table contents match the expected values.
+
+Modules:
+    - data_loader: Contains the `load_dataset_into_db` function.
+    - db_setup: Contains the `setup_database` function.
+
+Example usage:
+    pytest test_data_loader.py
+"""
+
 import os
 import sqlite3
 import sys
@@ -14,7 +39,12 @@ from db_setup import setup_database
 
 @pytest.fixture(scope="module")
 def temp_spreadsheet():
-    # Create a temporary spreadsheet
+    """
+    Fixture to create a temporary spreadsheet with sample data.
+
+    Returns:
+        str: Path to the temporary spreadsheet file.
+    """
     temp_spreadsheet_path = "temp_spreadsheet.xlsx"
     df = pd.DataFrame(
         {
@@ -36,7 +66,12 @@ def temp_spreadsheet():
 
 @pytest.fixture(scope="module")
 def temp_db():
-    # Create a temporary database
+    """
+    Fixture to create a temporary SQLite database.
+
+    Returns:
+        str: Path to the temporary database file.
+    """
     temp_db_path = "temp_use_cases.db"
     conn = setup_database(temp_db_path)
     conn.close()
@@ -49,6 +84,21 @@ def temp_db():
 
 
 def test_load_dataset_into_db(temp_spreadsheet, temp_db):
+    """
+    Test the `load_dataset_into_db` function.
+
+    This test loads data from a temporary spreadsheet into a temporary
+    database and verifies that the data is correctly inserted into the
+    `original_data` table.
+
+    Args:
+        temp_spreadsheet (str): Path to the temporary spreadsheet.
+        temp_db (str): Path to the temporary database.
+
+    Raises:
+        AssertionError: If the data in the database does not match the
+            expected values.
+    """
     # Call the function to load data into the database
     load_dataset_into_db(temp_spreadsheet, temp_db)
 

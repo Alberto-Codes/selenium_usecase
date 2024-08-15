@@ -1,0 +1,16 @@
+{
+    "url": "https://example.com",
+    "selectors": {
+        "acct_number": "#AcctNumber",
+        "check_number": "#CheckNumber",
+        "amount": "#Amount",
+        "date": "#Date",
+        "search_button": "#SearchButton",
+        "download_button": "#DownloadButton",
+        "popup_download_button": "#PopupDownloadButton"
+    },
+    "frames": {
+        "initial_frame": 0,
+        "result_frame": 1
+    }
+}

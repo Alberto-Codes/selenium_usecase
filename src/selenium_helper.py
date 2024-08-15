@@ -40,7 +40,7 @@ class WebAutomationHelper:
         quit(): Quit the WebDriver and close all windows.
     """
 
-    def __init__(self, config, download_dir=None):
+    def __init__(self, config, download_dir="data/temp/"):
         """
         Initialize the WebAutomationHelper class.
 
@@ -132,94 +132,3 @@ class WebAutomationHelper:
     def quit(self):
         """Quit the WebDriver and close all windows."""
         self.driver.quit()
-
-
-def load_config(config_file):
-    """
-    Load the configuration from a JSON file.
-
-    Args:
-        config_file (str): The path to the configuration JSON file.
-
-    Returns:
-        dict: The loaded configuration dictionary.
-    """
-    with open(config_file, "r") as file:
-        return json.load(file)
-
-
-def process_use_cases(spreadsheet_path, config_file):
-    """
-    Process use cases by automating web interactions using Selenium based on
-    the data from a spreadsheet and a configuration file.
-
-    Args:
-        spreadsheet_path (str): The file path to the spreadsheet containing
-            use case data.
-        config_file (str): The file path to the JSON configuration file.
-
-    Returns:
-        None
-
-    The function performs the following steps:
-        1. Loads the configuration from the JSON file.
-        2. Loads the use case data from the spreadsheet.
-        3. Creates a temporary directory for downloading files.
-        4. Initializes the WebAutomationHelper with the loaded configuration
-           and download directory.
-        5. Navigates to the specified URL and processes each use case by
-           inputting data, interacting with web elements, and downloading
-           files.
-        6. Handles pop-ups and window switches as necessary.
-        7. Closes the WebDriver session upon completion.
-
-    Example usage:
-        process_use_cases("use_cases.xlsx", "config.json")
-    """
-    # Load the configuration
-    config = load_config(config_file)
-
-    # Load the spreadsheet
-    df = pd.read_excel(spreadsheet_path)
-
-    # Create a temporary directory for downloads
-    with tempfile.TemporaryDirectory() as download_dir:
-        helper = WebAutomationHelper(config=config, download_dir=download_dir)
-
-        # Navigate to the initial page
-        helper.navigate_to()
-
-        # Process each use case
-        for index, row in df.iterrows():
-            acctnumber = row["AcctNumber"]
-            checknumber = row["CheckNumber"]
-            amount = row["Amount"]
-            date = row["Date"]
-
-            # Perform the necessary actions
-            helper.switch_to_frame("initial_frame")
-            helper.input_data(acctnumber, checknumber, amount, date)
-            helper.click_element("search_button")
-
-            # Wait for and click the download button in the new frame or window
-            helper.switch_to_default_content()
-            helper.switch_to_frame("result_frame")
-            helper.click_element("download_button")
-
-            # Handle any pop-ups for finalizing the download
-            helper.switch_to_new_window()
-            helper.click_element("popup_download_button")
-
-            # Close the pop-up and return to the main window
-            helper.close_window()
-            helper.switch_to_main_window()
-
-        # Finish the session
-        helper.quit()
-
-
-# Example usage:
-if __name__ == "__main__":
-    spreadsheet_path = "use_cases.xlsx"  # Replace with the path to your spreadsheet
-    config_file = "config.json"  # Replace with the path to your config file
-    process_use_cases(spreadsheet_path, config_file)

@@ -1,7 +1,6 @@
 import uuid
 
 import pandas as pd
-
 from db_setup import setup_database
 
 

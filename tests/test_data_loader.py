@@ -33,8 +33,9 @@ import pytest
 # Ensure the src directory is in the path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
-from data_loader import load_dataset_into_db
 from db_setup import setup_database
+
+from data_loader import load_dataset_into_db
 
 
 @pytest.fixture(scope="module")

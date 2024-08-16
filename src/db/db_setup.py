@@ -87,7 +87,7 @@ class TblRCNInput(Base):
 
 class TblRCNPDF(Base):
     """
-    Represents the table for storing PDF files as BLOBs linked to the input 
+    Represents the table for storing PDF files as BLOBs linked to the input
     table.
 
     Attributes:
@@ -105,13 +105,13 @@ class TblRCNPDF(Base):
 
 class TblRCNImage(Base):
     """
-    Represents the table for storing images as BLOBs, linked to the input 
+    Represents the table for storing images as BLOBs, linked to the input
     table and optionally to a PDF.
 
     Attributes:
         id (str): Primary key, unique identifier for each image.
         input_table_id (str): Foreign key linking to the input table.
-        pdf_id (str): Foreign key linking to a PDF record, if the image was 
+        pdf_id (str): Foreign key linking to a PDF record, if the image was
             generated from a PDF.
         image_blob (LargeBinary): BLOB storage for the image file.
     """
@@ -133,7 +133,7 @@ class TblRCNOCRResult(Base):
         image_id (str): Foreign key linking to the image table.
         preprocessing_type (str): The type of preprocessing applied before OCR.
         extracted_text (str): The text extracted from the image.
-        payee_match (str): Indicator of whether the extracted text matches 
+        payee_match (str): Indicator of whether the extracted text matches
             the expected payee.
     """
 
@@ -148,15 +148,15 @@ class TblRCNOCRResult(Base):
 
 class TblRCNBatchStatus(Base):
     """
-    Represents the table for tracking the status of batch processing 
+    Represents the table for tracking the status of batch processing
     operations.
 
     Attributes:
-        id (str): Primary key, autoincrementing identifier for each batch 
+        id (str): Primary key, autoincrementing identifier for each batch
             status.
         batch_id (str): Unique identifier for the batch.
         status (str): Status of the batch (e.g., 'pending', 'completed').
-        failed_records (int): Number of records in the batch that failed to 
+        failed_records (int): Number of records in the batch that failed to
             process.
     """
 
@@ -178,7 +178,7 @@ def create_database(db_path="data/rcn.db", echo=False):
             Defaults to False.
 
     Returns:
-        sqlalchemy.engine.base.Engine: The SQLAlchemy engine connected to the 
+        sqlalchemy.engine.base.Engine: The SQLAlchemy engine connected to the
         database.
     """
     engine = create_engine(f"duckdb:///{db_path}", echo=echo)
@@ -205,11 +205,11 @@ def get_session(engine):
     Sets up and returns a new SQLAlchemy session bound to the provided engine.
 
     Args:
-        engine (sqlalchemy.engine.base.Engine): The SQLAlchemy engine connected 
+        engine (sqlalchemy.engine.base.Engine): The SQLAlchemy engine connected
             to the database.
 
     Returns:
-        sqlalchemy.orm.session.Session: A new session object for database 
+        sqlalchemy.orm.session.Session: A new session object for database
         operations.
     """
     Session = sessionmaker(bind=engine)

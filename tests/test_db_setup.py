@@ -40,6 +40,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../s
 import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+
 from db.db_setup import (TblRCNBatchStatus, TblRCNImage, TblRCNInput,
                          TblRCNOCRResult, TblRCNPDF, create_database,
                          destroy_database, get_session)

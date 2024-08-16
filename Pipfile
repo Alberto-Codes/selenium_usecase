@@ -13,6 +13,7 @@ pytesseract = "*"
 sqlalchemy = "*"
 duckdb = "*"
 duckdb-engine = "*"
+prefect = "*"
 
 [dev-packages]
 black = "*"

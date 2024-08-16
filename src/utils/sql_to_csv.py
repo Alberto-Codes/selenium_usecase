@@ -1,6 +1,7 @@
 import duckdb
 import pandas as pd
 
+
 class SQLToCSVExporter:
     """
     A class to execute SQL queries from a file and export the results to a CSV file.
@@ -18,7 +19,7 @@ class SQLToCSVExporter:
         Initialize the SQLToCSVExporter with the path to the DuckDB database.
 
         Args:
-            db_path (str): The path to the DuckDB database file. Defaults to 
+            db_path (str): The path to the DuckDB database file. Defaults to
                 "use_cases.duckdb".
         """
         self.db_path = db_path
@@ -40,7 +41,7 @@ class SQLToCSVExporter:
         """
         try:
             # Read the SQL query from the file
-            with open(sql_file_path, 'r') as file:
+            with open(sql_file_path, "r") as file:
                 query = file.read()
 
             # Connect to the DuckDB database
@@ -61,11 +62,12 @@ class SQLToCSVExporter:
             # Ensure the connection is closed
             conn.close()
 
+
 # Example usage:
 if __name__ == "__main__":
     db_path = "use_cases.duckdb"
     sql_file_path = "src/SQL/sel.sql"
     output_csv_path = "data/output/query_results.csv"
-    
+
     exporter = SQLToCSVExporter(db_path=db_path)
     exporter.run_query_from_file_and_export(sql_file_path, output_csv_path)

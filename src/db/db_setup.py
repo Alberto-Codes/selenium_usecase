@@ -32,12 +32,16 @@ Example usage:
     destroy_database(db_path='data/rcn.db')
 """
 
-from sqlalchemy import create_engine, Column, String, Date, Float, LargeBinary, ForeignKey, Integer
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 import uuid
 
+import duckdb
+from sqlalchemy import (Column, Date, Float, ForeignKey, Integer, LargeBinary,
+                        String, create_engine)
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
 Base = declarative_base()
+
 
 def generate_uuid():
     """
@@ -48,9 +52,10 @@ def generate_uuid():
     """
     return str(uuid.uuid4())
 
+
 class TblRCNInput(Base):
     """
-    Represents the input table for records, tracking basic details like account 
+    Represents the input table for records, tracking basic details like account
     number, check number, amount, payee, and status.
 
     Attributes:
@@ -64,8 +69,9 @@ class TblRCNInput(Base):
         batch_uuid (str): Foreign key linking to a batch record.
         status (str): Status of the record (e.g., 'pending', 'processed').
     """
-    __tablename__ = 'tbl_RCN_Input'
-    
+
+    __tablename__ = "tbl_RCN_Input"
+
     id = Column(String, primary_key=True, default=generate_uuid)
     guid = Column(String, unique=True, nullable=False)
     account_number = Column(String)
@@ -73,8 +79,9 @@ class TblRCNInput(Base):
     amount = Column(Float)
     payee = Column(String)
     issue_date = Column(Date)
-    batch_uuid = Column(String, ForeignKey('tbl_RCN_Batch.batch_id'), nullable=True)
+    batch_uuid = Column(String, ForeignKey("tbl_RCN_Batch.id"), nullable=True)
     status = Column(String, default="pending")
+
 
 class TblRCNPDF(Base):
     """
@@ -85,30 +92,34 @@ class TblRCNPDF(Base):
         input_table_id (str): Foreign key linking to the input table.
         pdf_blob (LargeBinary): BLOB storage for the PDF file.
     """
-    __tablename__ = 'tbl_RCN_PDF'
-    
+
+    __tablename__ = "tbl_RCN_PDF"
+
     id = Column(String, primary_key=True, default=generate_uuid)
-    input_table_id = Column(String, ForeignKey('tbl_RCN_Input.id'), nullable=False)
+    input_table_id = Column(String, ForeignKey("tbl_RCN_Input.id"), nullable=False)
     pdf_blob = Column(LargeBinary)
+
 
 class TblRCNImage(Base):
     """
-    Represents the table for storing images as BLOBs, linked to the input table 
+    Represents the table for storing images as BLOBs, linked to the input table
     and optionally to a PDF.
 
     Attributes:
         id (str): Primary key, unique identifier for each image.
         input_table_id (str): Foreign key linking to the input table.
-        pdf_id (str): Foreign key linking to a PDF record, if the image was 
+        pdf_id (str): Foreign key linking to a PDF record, if the image was
             generated from a PDF.
         image_blob (LargeBinary): BLOB storage for the image file.
     """
-    __tablename__ = 'tbl_RCN_Image'
-    
+
+    __tablename__ = "tbl_RCN_Image"
+
     id = Column(String, primary_key=True, default=generate_uuid)
-    input_table_id = Column(String, ForeignKey('tbl_RCN_Input.id'), nullable=False)
-    pdf_id = Column(String, ForeignKey('tbl_RCN_PDF.id'), nullable=True)
+    input_table_id = Column(String, ForeignKey("tbl_RCN_Input.id"), nullable=False)
+    pdf_id = Column(String, ForeignKey("tbl_RCN_PDF.id"), nullable=True)
     image_blob = Column(LargeBinary)
+
 
 class TblRCNOCRResult(Base):
     """
@@ -119,16 +130,18 @@ class TblRCNOCRResult(Base):
         image_id (str): Foreign key linking to the image table.
         preprocessing_type (str): The type of preprocessing applied before OCR.
         extracted_text (str): The text extracted from the image.
-        payee_match (str): Indicator of whether the extracted text matches the 
+        payee_match (str): Indicator of whether the extracted text matches the
             expected payee.
     """
-    __tablename__ = 'tbl_RCN_OCR'
-    
+
+    __tablename__ = "tbl_RCN_OCR"
+
     id = Column(String, primary_key=True, default=generate_uuid)
-    image_id = Column(String, ForeignKey('tbl_RCN_Image.id'), nullable=False)
+    image_id = Column(String, ForeignKey("tbl_RCN_Image.id"), nullable=False)
     preprocessing_type = Column(String)
     extracted_text = Column(String)
     payee_match = Column(String)
+
 
 class TblRCNBatchStatus(Base):
     """
@@ -140,53 +153,57 @@ class TblRCNBatchStatus(Base):
         status (str): Status of the batch (e.g., 'pending', 'completed').
         failed_records (int): Number of records in the batch that failed to process.
     """
-    __tablename__ = 'tbl_RCN_Batch'
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    batch_id = Column(String, nullable=False)
+
+    __tablename__ = "tbl_RCN_Batch"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
     status = Column(String, default="pending")
     failed_records = Column(Integer, default=0)
 
-def create_database(db_path='data/rcn.db', echo=False):
+
+def create_database(db_path="data/rcn.db", echo=False):
     """
     Create the database and the tables defined in this module.
 
     Args:
-        db_path (str): The path where the database file will be created. 
+        db_path (str): The path where the database file will be created.
             Defaults to 'data/rcn.db'.
-        echo (bool): If True, SQLAlchemy will log all the SQL statements. 
+        echo (bool): If True, SQLAlchemy will log all the SQL statements.
             Defaults to False.
 
     Returns:
-        sqlalchemy.engine.base.Engine: The SQLAlchemy engine connected to the 
+        sqlalchemy.engine.base.Engine: The SQLAlchemy engine connected to the
         database.
     """
-    engine = create_engine(f'duckdb:///{db_path}', echo=echo)
+    engine = create_engine(f"duckdb:///{db_path}", echo=echo)
     Base.metadata.create_all(engine)
     return engine
 
-def destroy_database(db_path='data/rcn.db'):
+
+def destroy_database(db_path="data/rcn.db"):
     """
     Destroy the database by deleting the file.
 
     Args:
-        db_path (str): The path where the database file is located. 
+        db_path (str): The path where the database file is located.
             Defaults to 'data/rcn.db'.
     """
     import os
+
     if os.path.exists(db_path):
         os.remove(db_path)
+
 
 def get_session(engine):
     """
     Set up and return a new SQLAlchemy session bound to the provided engine.
 
     Args:
-        engine (sqlalchemy.engine.base.Engine): The SQLAlchemy engine connected 
+        engine (sqlalchemy.engine.base.Engine): The SQLAlchemy engine connected
             to the database.
 
     Returns:
-        sqlalchemy.orm.session.Session: A new session object for database 
+        sqlalchemy.orm.session.Session: A new session object for database
         operations.
     """
     Session = sessionmaker(bind=engine)

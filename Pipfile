@@ -10,6 +10,9 @@ selenium = "*"
 pdf2image = "*"
 opencv-python = "*"
 pytesseract = "*"
+sqlalchemy = "*"
+duckdb = "*"
+duckdb-engine = "*"
 
 [dev-packages]
 black = "*"

@@ -1,8 +1,7 @@
-from sqlalchemy import update, select, func
+from sqlalchemy import update, select, create_engine
 from sqlalchemy.orm import Session
 from prefect import task, flow
 from src.db.db_setup import TblRCNBatchStatus, TblRCNInput, get_session, generate_uuid
-import datetime
 
 @task
 def create_batch(session: Session):
@@ -59,7 +58,8 @@ def batch_processing_workflow(limit: int = 10):
     """
     Main workflow to handle batch processing.
     """
-    session = get_session()
+    engine = create_engine('duckdb:///your_database.db')
+    session = get_session(engine)
     
     # Step 1: Create a new batch
     batch_id = create_batch(session)

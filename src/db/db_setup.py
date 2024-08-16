@@ -1,16 +1,18 @@
 """
-This module defines the ORM (Object-Relational Mapping) models and utility functions 
-for setting up and managing a database using SQLAlchemy. The database is used to 
-track records, PDF files, images, OCR results, and batch processing statuses.
+This module defines the ORM (Object-Relational Mapping) models and utility 
+functions for setting up and managing a database using SQLAlchemy. The 
+database is used to track records, PDF files, images, OCR results, and batch 
+processing statuses.
 
 Classes:
-    TblRCNInput: Represents the input table for records, tracking basic details 
-        like account number, check number, amount, payee, and status.
-    TblRCNPDF: Represents the table for storing PDF files as BLOBs linked to the 
-        input table.
-    TblRCNImage: Represents the table for storing images as BLOBs, linked to the 
-        input table and optionally to a PDF.
-    TblRCNOCRResult: Represents the table for storing OCR results, linked to images.
+    TblRCNInput: Represents the input table for records, tracking basic 
+        details like account number, check number, amount, payee, and status.
+    TblRCNPDF: Represents the table for storing PDF files as BLOBs linked to 
+        the input table.
+    TblRCNImage: Represents the table for storing images as BLOBs, linked to 
+        the input table and optionally to a PDF.
+    TblRCNOCRResult: Represents the table for storing OCR results, linked to 
+        images.
     TblRCNBatchStatus: Represents the table for tracking the status of batch 
         processing operations.
 
@@ -18,8 +20,8 @@ Functions:
     generate_uuid(): Generates a unique UUID string.
     create_database(db_path='data/rcn.db', echo=False): Creates the database 
         and the tables defined in this module.
-    destroy_database(db_path='data/rcn.db'): Destroys the database by deleting the 
-        file.
+    destroy_database(db_path='data/rcn.db'): Destroys the database by deleting 
+        the file.
     get_session(engine): Sets up and returns a new SQLAlchemy session bound to 
         the provided engine.
 
@@ -45,7 +47,7 @@ Base = declarative_base()
 
 def generate_uuid():
     """
-    Generate a unique UUID string.
+    Generates a unique UUID string.
 
     Returns:
         str: A unique UUID string.
@@ -85,7 +87,8 @@ class TblRCNInput(Base):
 
 class TblRCNPDF(Base):
     """
-    Represents the table for storing PDF files as BLOBs linked to the input table.
+    Represents the table for storing PDF files as BLOBs linked to the input 
+    table.
 
     Attributes:
         id (str): Primary key, unique identifier for each PDF.
@@ -102,13 +105,13 @@ class TblRCNPDF(Base):
 
 class TblRCNImage(Base):
     """
-    Represents the table for storing images as BLOBs, linked to the input table
-    and optionally to a PDF.
+    Represents the table for storing images as BLOBs, linked to the input 
+    table and optionally to a PDF.
 
     Attributes:
         id (str): Primary key, unique identifier for each image.
         input_table_id (str): Foreign key linking to the input table.
-        pdf_id (str): Foreign key linking to a PDF record, if the image was
+        pdf_id (str): Foreign key linking to a PDF record, if the image was 
             generated from a PDF.
         image_blob (LargeBinary): BLOB storage for the image file.
     """
@@ -130,8 +133,8 @@ class TblRCNOCRResult(Base):
         image_id (str): Foreign key linking to the image table.
         preprocessing_type (str): The type of preprocessing applied before OCR.
         extracted_text (str): The text extracted from the image.
-        payee_match (str): Indicator of whether the extracted text matches the
-            expected payee.
+        payee_match (str): Indicator of whether the extracted text matches 
+            the expected payee.
     """
 
     __tablename__ = "tbl_RCN_OCR"
@@ -145,13 +148,16 @@ class TblRCNOCRResult(Base):
 
 class TblRCNBatchStatus(Base):
     """
-    Represents the table for tracking the status of batch processing operations.
+    Represents the table for tracking the status of batch processing 
+    operations.
 
     Attributes:
-        id (int): Primary key, autoincrementing identifier for each batch status.
+        id (str): Primary key, autoincrementing identifier for each batch 
+            status.
         batch_id (str): Unique identifier for the batch.
         status (str): Status of the batch (e.g., 'pending', 'completed').
-        failed_records (int): Number of records in the batch that failed to process.
+        failed_records (int): Number of records in the batch that failed to 
+            process.
     """
 
     __tablename__ = "tbl_RCN_Batch"
@@ -163,7 +169,7 @@ class TblRCNBatchStatus(Base):
 
 def create_database(db_path="data/rcn.db", echo=False):
     """
-    Create the database and the tables defined in this module.
+    Creates the database and the tables defined in this module.
 
     Args:
         db_path (str): The path where the database file will be created.
@@ -172,7 +178,7 @@ def create_database(db_path="data/rcn.db", echo=False):
             Defaults to False.
 
     Returns:
-        sqlalchemy.engine.base.Engine: The SQLAlchemy engine connected to the
+        sqlalchemy.engine.base.Engine: The SQLAlchemy engine connected to the 
         database.
     """
     engine = create_engine(f"duckdb:///{db_path}", echo=echo)
@@ -182,7 +188,7 @@ def create_database(db_path="data/rcn.db", echo=False):
 
 def destroy_database(db_path="data/rcn.db"):
     """
-    Destroy the database by deleting the file.
+    Destroys the database by deleting the file.
 
     Args:
         db_path (str): The path where the database file is located.
@@ -196,14 +202,14 @@ def destroy_database(db_path="data/rcn.db"):
 
 def get_session(engine):
     """
-    Set up and return a new SQLAlchemy session bound to the provided engine.
+    Sets up and returns a new SQLAlchemy session bound to the provided engine.
 
     Args:
-        engine (sqlalchemy.engine.base.Engine): The SQLAlchemy engine connected
+        engine (sqlalchemy.engine.base.Engine): The SQLAlchemy engine connected 
             to the database.
 
     Returns:
-        sqlalchemy.orm.session.Session: A new session object for database
+        sqlalchemy.orm.session.Session: A new session object for database 
         operations.
     """
     Session = sessionmaker(bind=engine)

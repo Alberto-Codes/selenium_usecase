@@ -1,73 +1,61 @@
-import duckdb
-import pandas as pd
+import csv
+import os
+from datetime import datetime
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
+from src.db.db_setup import get_session, TblRCNOCRResult, TblRCNInput, TblRCNImage, TblRCNPDF
 
 
-class SQLToCSVExporter:
+def fetch_records_for_export(session: Session):
     """
-    A class to execute SQL queries from a file and export the results to a CSV file.
-
-    Attributes:
-        db_path (str): The path to the DuckDB database file.
-
-    Methods:
-        run_query_from_file_and_export(sql_file_path, output_csv_path):
-            Execute an SQL query from a file and export the results to a CSV file.
+    Fetch records where the sum of payee_match is 0 across all OCR results and the input status is 'payee_match_attempted'.
     """
-
-    def __init__(self, db_path="use_cases.duckdb"):
-        """
-        Initialize the SQLToCSVExporter with the path to the DuckDB database.
-
-        Args:
-            db_path (str): The path to the DuckDB database file. Defaults to
-                "use_cases.duckdb".
-        """
-        self.db_path = db_path
-
-    def run_query_from_file_and_export(self, sql_file_path, output_csv_path):
-        """
-        Execute an SQL query from a file and export the results to a CSV file.
-
-        Args:
-            sql_file_path (str): The file path to the SQL file containing the query.
-            output_csv_path (str): The file path where the CSV file will be saved.
-
-        Raises:
-            Exception: If an error occurs during query execution or file export.
-
-        Example usage:
-            exporter = SQLToCSVExporter(db_path="use_cases.duckdb")
-            exporter.run_query_from_file_and_export("src/SQL/sel.sql", "output/query_results.csv")
-        """
-        try:
-            # Read the SQL query from the file
-            with open(sql_file_path, "r") as file:
-                query = file.read()
-
-            # Connect to the DuckDB database
-            conn = duckdb.connect(self.db_path)
-
-            # Execute the SQL query and fetch the results into a Pandas DataFrame
-            df = conn.execute(query).df()
-
-            # Export the DataFrame to a CSV file
-            df.to_csv(output_csv_path, index=False)
-
-            print(f"Exported {len(df)} records to {output_csv_path}")
-
-        except Exception as e:
-            print(f"An error occurred: {e}")
-
-        finally:
-            # Ensure the connection is closed
-            conn.close()
+    records = (
+        session.query(TblRCNInput, TblRCNPDF, TblRCNImage, TblRCNOCRResult)
+        .join(TblRCNImage, TblRCNInput.id == TblRCNImage.input_table_id)
+        .join(TblRCNPDF, TblRCNImage.pdf_id == TblRCNPDF.id)
+        .join(TblRCNOCRResult, TblRCNImage.id == TblRCNOCRResult.image_id)
+        .options(joinedload(TblRCNInput), joinedload(TblRCNPDF), joinedload(TblRCNImage), joinedload(TblRCNOCRResult))
+        .filter(TblRCNInput.status == "payee_match_attempted")
+        .group_by(TblRCNInput.id)
+        .having(func.sum(TblRCNOCRResult.payee_match) == 0)
+        .all()
+    )
+    return records
 
 
-# Example usage:
-if __name__ == "__main__":
-    db_path = "use_cases.duckdb"
-    sql_file_path = "src/SQL/sel.sql"
-    output_csv_path = "data/output/query_results.csv"
+def export_to_csv(records, batch_id):
+    """
+    Export the fetched records to a CSV file.
+    """
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"data/output/payee_mismatch_{batch_id}_{timestamp}.csv"
+    
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-    exporter = SQLToCSVExporter(db_path=db_path)
-    exporter.run_query_from_file_and_export(sql_file_path, output_csv_path)
+    with open(filename, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([
+            "Input ID", "Batch ID", "Account Number", "Check Number", "Amount", 
+            "Payee 1", "Payee 2", "Issue Date", "PDF File Name", "Image File Name", 
+            "OCR Text", "Payee Match"
+        ])
+
+        for input_record, pdf_record, image_record, ocr_record in records:
+            writer.writerow([
+                input_record.id,
+                input_record.batch_uuid,
+                input_record.account_number,
+                input_record.check_number,
+                input_record.amount,
+                input_record.payee_1,
+                input_record.payee_2,
+                input_record.issue_date,
+                pdf_record.pdf_name,
+                f"{input_record.guid}_{image_record.id}.png",  # Assuming image filenames are structured like this
+                ocr_record.extracted_text,
+                ocr_record.payee_match
+            ])
+
+    print(f"Export completed. File saved as {filename}")
+    return filename

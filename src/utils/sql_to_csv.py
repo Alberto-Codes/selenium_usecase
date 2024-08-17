@@ -6,22 +6,32 @@ from sqlalchemy import func
 from src.db.db_setup import get_session, TblRCNOCRResult, TblRCNInput, TblRCNImage, TblRCNPDF
 
 
+from sqlalchemy.orm import joinedload
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+from src.db.db_setup import TblRCNOCRResult, TblRCNInput, TblRCNImage, TblRCNPDF
+
 def fetch_records_for_export(session: Session):
     """
     Fetch records where the sum of payee_match is 0 across all OCR results and the input status is 'payee_match_attempted'.
     """
+    # Correcting the query structure
     records = (
-        session.query(TblRCNInput, TblRCNPDF, TblRCNImage, TblRCNOCRResult)
+        session.query(TblRCNInput)
         .join(TblRCNImage, TblRCNInput.id == TblRCNImage.input_table_id)
         .join(TblRCNPDF, TblRCNImage.pdf_id == TblRCNPDF.id)
         .join(TblRCNOCRResult, TblRCNImage.id == TblRCNOCRResult.image_id)
-        .options(joinedload(TblRCNInput), joinedload(TblRCNPDF), joinedload(TblRCNImage), joinedload(TblRCNOCRResult))
+        .options(
+            joinedload(TblRCNInput.images).joinedload(TblRCNImage.pdf),  # eager load images and pdfs
+            joinedload(TblRCNInput.images).joinedload(TblRCNImage.ocr_results)  # eager load ocr_results
+        )
         .filter(TblRCNInput.status == "payee_match_attempted")
         .group_by(TblRCNInput.id)
         .having(func.sum(TblRCNOCRResult.payee_match) == 0)
         .all()
     )
     return records
+
 
 
 def export_to_csv(records, batch_id):

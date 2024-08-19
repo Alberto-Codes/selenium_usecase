@@ -1,4 +1,3 @@
-
 import cv2
 import numpy as np
 
@@ -20,7 +19,9 @@ class ImageStorage:
         """
         self.session = session
 
-    def save_image_blob(self, input_table_id: str, image: np.ndarray, processing_type: str = "processed"):
+    def save_image_blob(
+        self, input_table_id: str, image: np.ndarray, processing_type: str = "processed"
+    ):
         """
         Store an image as a BLOB in the TblRCNImage table with its associated processing type.
 

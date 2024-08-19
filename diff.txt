@@ -1,0 +1,861 @@
+diff --git a/src/flows/batch_processing_flow.py b/src/flows/batch_processing_flow.py
+new file mode 100644
+index 0000000..0d41814
+--- /dev/null
++++ b/src/flows/batch_processing_flow.py
+@@ -0,0 +1,75 @@
++from typing import List
++
++from prefect import flow, task
++
++from src.db.db_connect import session
++from src.services.batch_service import BatchService
++
++
++@task
++def create_and_process_batch_task(service: BatchService, limit: int) -> tuple:
++    """
++    Creates and processes a batch of records using the given BatchService.
++
++    Args:
++        service (BatchService): The batch service to use for processing.
++        limit (int): The maximum number of pending records to process.
++
++    Returns:
++        tuple: A tuple containing the batch ID and the list of processed records.
++    """
++    return service.create_and_process_batch(limit)
++
++
++@task
++def complete_batch_task(service: BatchService, batch_id: str) -> None:
++    """
++    Marks a batch as completed using the given BatchService.
++
++    Args:
++        service (BatchService): The batch service to use for completing the batch.
++        batch_id (str): The ID of the batch to complete.
++
++    Returns:
++        None
++    """
++    service.complete_batch(batch_id)
++
++
++@task
++def print_records(records: List) -> None:
++    """
++    Prints details of the processed records.
++
++    Args:
++        records (List): The list of records to print.
++
++    Returns:
++        None
++    """
++    for record in records:
++        print(
++            f"Record ID: {record.id}, Account: {record.account_number}, Status: {record.status}, Batch ID: {record.batch_uuid}"
++        )
++
++
++@flow
++def batch_processing_workflow(limit: int = 10) -> None:
++    """
++    Prefect flow for batch processing of records.
++
++    Args:
++        limit (int): The maximum number of pending records to process. Defaults to 10.
++
++    Returns:
++        None
++    """
++    batch_service = BatchService(session)
++
++    batch_id, records = create_and_process_batch_task(batch_service, limit)
++
++    print_records(records)
++
++    complete_batch_task(batch_service, batch_id)
++
++    session.close()
+diff --git a/src/flows/data_loader_flow.py b/src/flows/data_loader_flow.py
+new file mode 100644
+index 0000000..b5e879a
+--- /dev/null
++++ b/src/flows/data_loader_flow.py
+@@ -0,0 +1,42 @@
++from prefect import flow, task
++from sqlalchemy.orm import Session
++
++from src.db.db_connect import get_session
++from src.services.data_loader_service import DataLoaderService
++
++
++@task
++def load_data_task(session: Session, spreadsheet_path: str) -> None:
++    """
++    Task to load data into the database using DataLoaderService.
++
++    Args:
++        session (Session): The SQLAlchemy session for database operations.
++        spreadsheet_path (str): The file path to the spreadsheet containing the data to be loaded.
++
++    Returns:
++        None
++    """
++    data_loader = DataLoaderService(session)
++    data_loader.load_dataset_into_db(spreadsheet_path)
++
++
++@flow
++def data_loader_flow(spreadsheet_path: str) -> None:
++    """
++    Prefect flow to manage the data loading process.
++
++    Args:
++        spreadsheet_path (str): The file path to the spreadsheet containing the data to be loaded.
++
++    Returns:
++        None
++    """
++    session = get_session()
++    load_data_task(session, spreadsheet_path).result()
++    session.close()
++
++
++if __name__ == "__main__":
++    # Run the flow with the path to the spreadsheet
++    data_loader_flow("path/to/your/spreadsheet.xlsx")
+diff --git a/src/flows/payee_matching_flow.py b/src/flows/payee_matching_flow.py
+new file mode 100644
+index 0000000..768f836
+--- /dev/null
++++ b/src/flows/payee_matching_flow.py
+@@ -0,0 +1,38 @@
++from prefect import flow, task
++
++from src.db.db_connect import get_session
++from src.services.payee_matching_service import PayeeMatchingService
++
++
++@task
++def process_ocr_records(service: PayeeMatchingService) -> None:
++    """
++    Processes OCR records by fetching them and performing payee matching.
++
++    Args:
++        service (PayeeMatchingService): The service handling the payee matching process.
++
++    Returns:
++        None
++    """
++    ocr_records = service.fetch_ocr_records()
++
++    for ocr_record in ocr_records:
++        service.match_and_update_payees(ocr_record)
++
++
++@flow
++def payee_matching_flow() -> None:
++    """
++    Orchestrates the payee matching process by initializing the session and service,
++    then processing the OCR records.
++
++    Returns:
++        None
++    """
++    session = get_session()
++    service = PayeeMatchingService(session)
++
++    process_ocr_records(service)
++
++    session.close()
+diff --git a/src/flows/pdf_batch_download_flow.py b/src/flows/pdf_batch_download_flow.py
+new file mode 100644
+index 0000000..4196238
+--- /dev/null
++++ b/src/flows/pdf_batch_download_flow.py
+@@ -0,0 +1,67 @@
++# src/flows/pdf_batch_download_flow.py
++
++from prefect import flow, task
++
++from src.db.db_connect import get_session
++from src.db.repositories.batch_repository import BatchRepository
++from src.db.repositories.input_repository import InputRepository
++from src.scrapers.pdf_site_scraper import PDFSiteScraper
++from src.services.download_service import DownloadService
++from src.utils.selenium_helper import WebAutomationHelper
++
++
++@task
++def process_record(
++    record, download_service: DownloadService, scraper: PDFSiteScraper
++) -> None:
++    """
++    Processes a single record by downloading the associated PDF and handling any errors.
++
++    Args:
++        record: The record containing the details for downloading the PDF.
++        download_service (DownloadService): The service used to download and store PDFs.
++        scraper (PDFSiteScraper): Scraper class to execute the web download steps.
++
++    Returns:
++        None
++    """
++    try:
++        pdf_path = download_service.download_pdf(record, scraper)
++        print(
++            f"Successfully downloaded and saved PDF for record {record.id} to {pdf_path}"
++        )
++    except Exception as e:
++        print(f"Failed to download for record {record.id}: {e}")
++
++
++@flow
++def pdf_batch_download_flow(batch_id: str, limit: int = 10) -> None:
++    """
++    Main flow to download PDFs for a batch of records, reusing the browser window.
++
++    Args:
++        batch_id (str): The ID of the batch to process.
++        limit (int): The maximum number of records to process. Defaults to 10.
++
++    Returns:
++        None
++    """
++    with get_session() as session:
++        input_repo = InputRepository(session)
++        batch_repo = BatchRepository(session)
++        download_service = DownloadService(session)
++
++        records = input_repo.get_records_by_batch_id(batch_id, limit)
++        if not records:
++            print(f"No pending records found for batch {batch_id}")
++            return
++
++        # Initialize the WebAutomationHelper (and the browser session) once
++        with WebAutomationHelper() as helper:
++            scraper = PDFSiteScraper(helper)
++
++            for record in records:
++                process_record(record, download_service, scraper)
++
++        batch_repo.update_batch_status(batch_id, "completed")
++        print(f"Batch {batch_id} processing complete.")
+diff --git a/src/flows/pdf_processing_flow.py b/src/flows/pdf_processing_flow.py
+new file mode 100644
+index 0000000..a8d811d
+--- /dev/null
++++ b/src/flows/pdf_processing_flow.py
+@@ -0,0 +1,90 @@
++from typing import List, Tuple
++
++from prefect import flow, task
++
++from src.db.db_connect import session
++from src.db.repositories.input_repository import InputRepository
++from src.db.repositories.ocr_result_repository import OCRResultRepository
++from src.db.repositories.pdf_repository import PDFRepository
++from src.services.ocr_extraction_service import OCRExtractionService
++from src.services.pdf_processing_service import PDFImageProcessingService
++
++
++@task
++def fetch_input_records(batch_id: str):
++    """
++    Fetch input records by batch ID.
++
++    Args:
++        batch_id (str): The batch ID to filter input records.
++
++    Returns:
++        List[InputRecord]: List of input records associated with the batch ID.
++    """
++    input_repo = InputRepository(session)
++    return input_repo.get_records_by_batch_id(batch_id)
++
++
++@task
++def process_pdf_to_images(pdf_blob: bytes, input_table_id: str, pdf_id: str):
++    """
++    Convert a PDF blob to images and save them to disk.
++
++    Args:
++        pdf_blob (bytes): The PDF data as a binary large object (BLOB).
++        input_table_id (str): The ID of the related input record.
++        pdf_id (str): The ID of the PDF record.
++
++    Returns:
++        List[Tuple[str, str, bytes]]: A list of tuples containing image paths,
++        image IDs, and image blobs.
++    """
++    pdf_image_service = PDFImageProcessingService()
++    return pdf_image_service.convert_pdf_to_images(
++        pdf_blob, input_table_id, pdf_id, save_to_disk=True, save_blob_to_db=False
++    )
++
++
++@task
++def extract_ocr_from_images(image_paths: List[Tuple[str, str, bytes]]):
++    """
++    Extract OCR text from images and save the results to the database.
++
++    Args:
++        image_paths (List[Tuple[str, str, bytes]]): List of image paths, IDs,
++        and image blobs.
++    """
++    ocr_service = OCRExtractionService(session)
++    for image_path, image_id, image_blob in image_paths:
++        ocr_service.extract_and_save_ocr_results(image_blob, image_id)
++
++
++@flow
++def batch_processing_flow(batch_id: str):
++    """
++    Main flow to process a batch of input records by converting PDFs to images
++    and extracting OCR text.
++
++    Args:
++        batch_id (str): The batch ID to process.
++    """
++    input_records = fetch_input_records(batch_id)
++    pdf_repo = PDFRepository(session)
++
++    for record in input_records:
++        pdf_record = pdf_repo.get_pdf_by_input_id(record.id)
++        image_paths = process_pdf_to_images(
++            pdf_record.pdf_blob, record.id, pdf_record.id
++        )
++        extract_ocr_from_images(image_paths)
++
++    # Update the input records' status to reflect that processing is complete
++    input_repo = InputRepository(session)
++    input_repo.update_records_status(
++        [record.id for record in input_records], "processed"
++    )
++
++
++# Example invocation
++if __name__ == "__main__":
++    batch_processing_flow(batch_id="your_batch_id_here")
+diff --git a/src/prefect_flows/create_batch.py b/src/prefect_flows/create_batch.py
+deleted file mode 100644
+index e3b2841..0000000
+--- a/src/prefect_flows/create_batch.py
++++ /dev/null
+@@ -1,79 +0,0 @@
+-from sqlalchemy import update, select, create_engine
+-from sqlalchemy.orm import Session
+-from prefect import task, flow
+-from src.db.db_setup import TblRCNBatchStatus, TblRCNInput, get_session, generate_uuid
+-
+-@task
+-def create_batch(session: Session):
+-    """
+-    Create a new batch and set its status to 'pending'.
+-    """
+-    batch_id = generate_uuid()
+-    new_batch = TblRCNBatchStatus(id=batch_id, status="pending", failed_records=0)
+-    session.add(new_batch)
+-    session.commit()
+-    return batch_id
+-
+-@task
+-def update_batch_status(session: Session, batch_id: str, status: str):
+-    """
+-    Update the status of the batch to the specified status.
+-    """
+-    session.execute(
+-        update(TblRCNBatchStatus)
+-        .where(TblRCNBatchStatus.id == batch_id)
+-        .values(status=status)
+-    )
+-    session.commit()
+-
+-@task
+-def select_and_update_records(session: Session, batch_id: str, limit: int):
+-    """
+-    Select a specified number of records, update their status, and associate them with the batch ID.
+-    """
+-    stmt = (
+-        select(TblRCNInput)
+-        .where(TblRCNInput.status == 'pending')
+-        .limit(limit)
+-    )
+-    records = session.execute(stmt).scalars().all()
+-
+-    for record in records:
+-        record.status = 'in_progress'
+-        record.batch_uuid = batch_id
+-
+-    session.commit()
+-    return records
+-
+-@task
+-def print_records(records):
+-    """
+-    Print the selected records to stdout.
+-    """
+-    for record in records:
+-        print(f"Record ID: {record.id}, Account: {record.account_number}, Status: {record.status}, Batch ID: {record.batch_uuid}")
+-
+-@flow
+-def batch_processing_workflow(limit: int = 10):
+-    """
+-    Main workflow to handle batch processing.
+-    """
+-    engine = create_engine('duckdb:///your_database.db')
+-    session = get_session(engine)
+-    
+-    # Step 1: Create a new batch
+-    batch_id = create_batch(session)
+-
+-    # Step 2: Update batch status to 'in_progress'
+-    update_batch_status(session, batch_id, 'in_progress')
+-
+-    # Step 3: Select and update input records with batch ID
+-    records = select_and_update_records(session, batch_id, limit)
+-
+-    # Step 4: Print out the selected records
+-    print_records(records)
+-    
+-    # Optionally: Update batch status to 'completed'
+-    # update_batch_status(session, batch_id, 'completed')
+-
+-    session.close()
+diff --git a/src/prefect_flows/db_pipeline.py b/src/prefect_flows/db_pipeline.py
+deleted file mode 100644
+index 94a9beb..0000000
+--- a/src/prefect_flows/db_pipeline.py
++++ /dev/null
+@@ -1,46 +0,0 @@
+-import os
+-import sys
+-
+-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+-from prefect import flow, task
+-
+-from src.db.db_setup import create_database, destroy_database
+-
+-
+-@task
+-def create_db():
+-    print("Creating database...")
+-    engine = create_database(echo=True)
+-    return engine
+-
+-
+-@task
+-def destroy_db():
+-    print("Destroying database...")
+-    db_path = "data/rcn.db"
+-    destroy_database(db_path)
+-
+-
+-@task
+-def check_db_exists():
+-    db_path = "data/rcn.db"
+-    return os.path.exists(db_path)
+-
+-
+-@flow
+-def db_management_flow(destroy=False):
+-    if destroy:
+-        destroy_db()
+-
+-    db_exists = check_db_exists()
+-
+-    if not db_exists:
+-        engine = create_db()
+-        print("Database created successfully.")
+-    else:
+-        print("Database already exists.")
+-
+-
+-if __name__ == "__main__":
+-    # Example usage: set destroy=True to destroy the DB first
+-    db_management_flow(destroy=False)
+diff --git a/src/prefect_flows/image_save_pipeline.py b/src/prefect_flows/image_save_pipeline.py
+deleted file mode 100644
+index 1d068c9..0000000
+--- a/src/prefect_flows/image_save_pipeline.py
++++ /dev/null
+@@ -1,44 +0,0 @@
+-from prefect import flow, task
+-from sqlalchemy.orm import sessionmaker
+-from src.db.db_setup import get_session, TblRCNImage
+-from src.utils.image_saver import ImageSaver
+-
+-@task
+-def fetch_raw_images(session):
+-    """
+-    Fetch images from the database that have the processing type 'raw' and are linked
+-    to input records with a status of 'converted'.
+-    """
+-    return (
+-        session.query(TblRCNImage)
+-        .join(TblRCNInput, TblRCNImage.input_table_id == TblRCNInput.id)
+-        .filter(TblRCNImage.processing_type == "raw", TblRCNInput.status == "converted")
+-        .all()
+-    )
+-
+-@task
+-def save_image(image_saver: ImageSaver, image_record: TblRCNImage):
+-    """
+-    Save an image using the ImageSaver class.
+-    """
+-    image_saver.save_image(image_record)
+-
+-@flow
+-def save_images_flow():
+-    """
+-    Prefect flow to save images with 'raw' processing type and input status 'converted',
+-    and update the database.
+-    """
+-    session = get_session()
+-
+-    # Instantiate the ImageSaver class
+-    image_saver = ImageSaver(session=session)
+-
+-    # Fetch raw images with input status 'converted'
+-    raw_images = fetch_raw_images(session).result()
+-
+-    # Save each image and update the database
+-    for image_record in raw_images:
+-        save_image(image_saver, image_record)
+-
+-    session.close()
+diff --git a/src/prefect_flows/image_text_pipeline.py b/src/prefect_flows/image_text_pipeline.py
+deleted file mode 100644
+index 4215a38..0000000
+--- a/src/prefect_flows/image_text_pipeline.py
++++ /dev/null
+@@ -1,69 +0,0 @@
+-from prefect import flow, task
+-from sqlalchemy.orm import sessionmaker
+-from src.db.db_setup import get_session, TblRCNImage, TblRCNOCRResult, TblRCNInput
+-from src.utils.ocr_processor import OCRProcessor
+-
+-@task
+-def fetch_images_for_ocr(session):
+-    """
+-    Fetch images that are linked to input records with a status of 'raw_image_saved'.
+-    """
+-    return (
+-        session.query(TblRCNImage)
+-        .join(TblRCNInput, TblRCNImage.input_table_id == TblRCNInput.id)
+-        .filter(TblRCNInput.status == "raw_image_saved")
+-        .all()
+-    )
+-
+-@task
+-def extract_text_from_image(ocr_processor: OCRProcessor, image_record: TblRCNImage):
+-    """
+-    Extract text from an image using the OCRProcessor and save the result in the database.
+-    """
+-    # Convert BLOB back to an image object
+-    image = Image.open(io.BytesIO(image_record.image_blob))
+-    
+-    # Extract text using Tesseract
+-    extracted_text = ocr_processor.extract_text(image)
+-
+-    return extracted_text
+-
+-@task
+-def save_ocr_result(session, image_record, extracted_text):
+-    """
+-    Save the OCR result in the database.
+-    """
+-    ocr_result = TblRCNOCRResult(
+-        image_id=image_record.id,
+-        preprocessing_type="raw",  # Set preprocessing type as 'raw'
+-        extracted_text=extracted_text,
+-    )
+-    session.add(ocr_result)
+-
+-    # Update the status of the input record to 'text_extracted'
+-    input_record = (
+-        session.query(TblRCNInput).filter_by(id=image_record.input_table_id).first()
+-    )
+-    input_record.status = "text_extracted"
+-
+-    session.commit()
+-
+-@flow
+-def ocr_extraction_flow():
+-    """
+-    Prefect flow to extract text from images and save the results in the OCR table.
+-    """
+-    session = get_session()
+-
+-    # Instantiate the OCRProcessor class
+-    ocr_processor = OCRProcessor()
+-
+-    # Fetch images linked to input records with status 'raw_image_saved'
+-    raw_images = fetch_images_for_ocr(session).result()
+-
+-    # Process each image
+-    for image_record in raw_images:
+-        extracted_text = extract_text_from_image(ocr_processor, image_record).result()
+-        save_ocr_result(session, image_record, extracted_text)
+-
+-    session.close()
+diff --git a/src/prefect_flows/mismatch_export_pipeline.py b/src/prefect_flows/mismatch_export_pipeline.py
+index 2f83b62..a264c21 100644
+--- a/src/prefect_flows/mismatch_export_pipeline.py
++++ b/src/prefect_flows/mismatch_export_pipeline.py
+@@ -1,25 +1,29 @@
+ from prefect import flow, task
++
+ from src.db.db_setup import get_session
++from src.utils.payee_mismatch_exporter import (export_to_csv,
++                                               fetch_records_for_export)
+ 
+-from src.utils.payee_mismatch_exporter import fetch_records_for_export, export_to_csv
+ 
+ @task
+ def fetch_records(session, batch_id):
+     return fetch_records_for_export(session)
+ 
++
+ @task
+ def save_to_csv(records, batch_id):
+     return export_to_csv(records, batch_id)
+ 
++
+ @flow
+ def payee_mismatch_export_flow(batch_id):
+     session = get_session()
+-    
++
+     records = fetch_records(session, batch_id).result()
+-    
++
+     if records:
+         save_to_csv(records, batch_id)
+     else:
+         print("No records found with payee match sum of 0.")
+-    
++
+     session.close()
+diff --git a/src/prefect_flows/ocr_pipeline.py b/src/prefect_flows/ocr_pipeline.py
+deleted file mode 100644
+index d6fecd7..0000000
+--- a/src/prefect_flows/ocr_pipeline.py
++++ /dev/null
+@@ -1,57 +0,0 @@
+-from prefect import flow, task
+-from sqlalchemy import create_engine
+-
+-from src.db.data_loader import ensure_database_exists, load_data_from_excel
+-from src.db.db_setup import get_session
+-
+-
+-@task
+-def connect_to_database(db_path: str):
+-    """
+-    Connect to an existing database and ensure it exists.
+-
+-    Args:
+-        db_path (str): Path to the database file.
+-
+-    Returns:
+-        sqlalchemy.orm.Session: The SQLAlchemy session for database operations.
+-    """
+-    engine = create_engine(f"duckdb:///{db_path}")
+-    ensure_database_exists(engine)
+-    session = get_session(engine)
+-    return session
+-
+-
+-@task
+-def load_input_data_task(session, file_path: str, sheet_name: str = None):
+-    """
+-    Task to load input data from an Excel file.
+-
+-    Args:
+-        session (sqlalchemy.orm.Session): The SQLAlchemy session for database operations.
+-        file_path (str): Path to the Excel file.
+-        sheet_name (str): The sheet name to load data from, default is None which loads the first sheet.
+-    """
+-    load_data_from_excel(session, file_path, sheet_name)
+-
+-
+-@flow
+-def ocr_pipeline(file_path: str, db_path: str, sheet_name: str = None):
+-    """
+-    Main flow to run the OCR pipeline.
+-
+-    Args:
+-        file_path (str): Path to the Excel file.
+-        db_path (str): Path to the database file.
+-        sheet_name (str): The sheet name to load data from, default is None which loads the first sheet.
+-    """
+-    session = connect_to_database(db_path)
+-    load_input_data_task(session, file_path, sheet_name)
+-    # Add more steps as needed...
+-
+-
+-if __name__ == "__main__":
+-    # Run the pipeline with the given Excel file path and database path
+-    ocr_pipeline(
+-        file_path="data/input_data.xlsx", db_path="data/rcn.db", sheet_name="Sheet1"
+-    )
+diff --git a/src/prefect_flows/pdf_convert_pipeline.py b/src/prefect_flows/pdf_convert_pipeline.py
+deleted file mode 100644
+index da4a8ac..0000000
+--- a/src/prefect_flows/pdf_convert_pipeline.py
++++ /dev/null
+@@ -1,67 +0,0 @@
+-from prefect import flow, task
+-from sqlalchemy.orm import Session
+-from src.db.db_setup import get_session
+-from src.db.models import TblRCNInput, TblRCNPDF
+-from src.download_manager import PDFConverter, ImageStorage
+-
+-
+-@task
+-def fetch_downloaded_pdfs(session: Session):
+-    """
+-    Fetch records with status 'downloaded' from the TblRCNInput table.
+-
+-    Args:
+-        session (Session): The SQLAlchemy session for database operations.
+-
+-    Returns:
+-        list: A list of records with status 'downloaded'.
+-    """
+-    return session.query(TblRCNInput).filter(TblRCNInput.status == 'downloaded').all()
+-
+-
+-@task
+-def convert_and_store_images(session: Session, input_records):
+-    """
+-    Convert PDF blobs to images and store them in the TblRCNImage table.
+-
+-    Args:
+-        session (Session): The SQLAlchemy session for database operations.
+-        input_records (list): List of input records to process.
+-
+-    Returns:
+-        None
+-    """
+-    for input_record in input_records:
+-        # Fetch the corresponding PDF record
+-        pdf_record = session.query(TblRCNPDF).filter(TblRCNPDF.input_table_id == input_record.id).one_or_none()
+-
+-        if pdf_record:
+-            # Convert the PDF to images
+-            pdf_converter = PDFConverter(pdf_record.pdf_blob)
+-            images = pdf_converter.convert_to_images()
+-
+-            # Store each image in the TblRCNImage table
+-            image_storage = ImageStorage(session)
+-            for image in images:
+-                image_storage.save_image_blob(input_table_id=input_record.id, image=image)
+-
+-            # Update the status of the input record to 'converted'
+-            input_record.status = 'converted'
+-            session.commit()
+-
+-
+-@flow
+-def convert_pdf_to_image_flow(db_path: str = "data/rcn.db"):
+-    """
+-    Prefect flow to handle converting PDFs to images and storing them in the database.
+-
+-    Args:
+-        db_path (str): Path to the DuckDB database.
+-    """
+-    session = get_session(db_path=db_path)
+-    input_records = fetch_downloaded_pdfs(session=session)
+-    convert_and_store_images(session=session, input_records=input_records)
+-
+-
+-if __name__ == "__main__":
+-    convert_pdf_to_image_flow()
+diff --git a/src/prefect_flows/pdf_download_pipeline.py b/src/prefect_flows/pdf_download_pipeline.py
+deleted file mode 100644
+index 850ff88..0000000
+--- a/src/prefect_flows/pdf_download_pipeline.py
++++ /dev/null
+@@ -1,25 +0,0 @@
+-from prefect import flow, task
+-from sqlalchemy.orm import Session
+-from src.db.db_setup import get_session
+-from src.download_manager import process_rows_for_download
+-
+-@task
+-def download_pdfs_task(db_path: str = "data/rcn.db"):
+-    """
+-    Task to download PDFs for pending records in the database.
+-    
+-    Args:
+-        db_path (str): Path to the DuckDB database.
+-    """
+-    session = get_session(db_path=db_path)
+-    process_rows_for_download(session)
+-
+-@flow
+-def download_pdf_flow():
+-    """
+-    Prefect flow to handle downloading PDFs for pending records in batches.
+-    """
+-    download_pdfs_task()
+-
+-if __name__ == "__main__":
+-    download_pdf_flow()
+diff --git a/src/prefect_flows/text_match_pipeline.py b/src/prefect_flows/text_match_pipeline.py
+deleted file mode 100644
+index d264cb4..0000000
+--- a/src/prefect_flows/text_match_pipeline.py
++++ /dev/null
+@@ -1,46 +0,0 @@
+-from prefect import flow, task
+-from sqlalchemy.orm import Session
+-from src.db.db_setup import get_session, TblRCNOCRResult, TblRCNInput
+-from src.utils.payee_matcher import PayeeMatcher
+-
+-
+-@task
+-def fetch_ocr_records_for_matching(session: Session):
+-    # Fetch OCR records that need payee matching (assuming raw preprocessing and status 'text_extracted')
+-    ocr_records = session.query(TblRCNOCRResult).filter_by(preprocessing_type="raw").all()
+-    return ocr_records
+-
+-
+-@task
+-def match_and_update_payees(session: Session, ocr_record, matcher: PayeeMatcher):
+-    # Fetch the related input record to get payee_1 and payee_2
+-    input_record = session.query(TblRCNInput).filter_by(id=ocr_record.image.input_table_id).first()
+-    payees = [input_record.payee_1, input_record.payee_2]
+-
+-    # Perform the payee matching
+-    matched, possible_matches = matcher.match_payees(ocr_record.extracted_text, payees)
+-
+-    # Update OCR record with the payee matching results
+-    ocr_record.payee_match = "yes" if any(matched.values()) else "no"
+-    session.commit()
+-
+-    # Update the input record's status to 'payee_match_attempted'
+-    input_record.status = "payee_match_attempted"
+-    session.commit()
+-
+-    return matched, possible_matches
+-
+-
+-@flow
+-def payee_matching_flow():
+-    session = get_session()
+-
+-    # Instantiate the PayeeMatcher
+-    matcher = PayeeMatcher()
+-
+-    ocr_records = fetch_ocr_records_for_matching(session).result()
+-
+-    for ocr_record in ocr_records:
+-        match_and_update_payees(session, ocr_record, matcher)
+-
+-    session.close()

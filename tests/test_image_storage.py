@@ -31,7 +31,6 @@ from unittest.mock import MagicMock, patch
 
 import cv2
 import numpy as np
-
 from image_storage import ImageStorage
 
 

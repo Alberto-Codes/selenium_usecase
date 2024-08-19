@@ -7,9 +7,8 @@ from unittest.mock import MagicMock, patch
 import cv2
 import numpy as np
 import pytest
-from PIL import Image
-
 from ocr_text_extractor import OCRTextExtractor
+from PIL import Image
 
 
 @pytest.fixture

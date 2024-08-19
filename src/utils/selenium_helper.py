@@ -1,96 +1,134 @@
+import json
 import os
-import shutil
-from sqlalchemy.orm import Session
-from sqlalchemy import update
-from src.db.models import TblRCNInput, TblRCNPDF
-from src.selenium_helper import WebAutomationHelper
+import tempfile
 
-def process_rows_for_download(session: Session, download_directory: str = "data/PDFs"):
+import pandas as pd
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+
+class WebAutomationHelper:
     """
-    Processes rows with a 'pending' status from the `TblRCNInput` table in the database.
-    For each row, a PDF is downloaded using Selenium, stored as a BLOB in the `TblRCNPDF` table,
-    and the corresponding file is saved in the specified directory.
+    A helper class to automate web interactions using Selenium WebDriver.
+    This class handles browser setup, navigation, form filling,
+    element interactions, and window management.
 
-    Args:
-        session (Session): The SQLAlchemy session for database operations.
-        download_directory (str): The directory where downloaded PDFs will be stored. Defaults to "data/PDFs".
+    Attributes:
+        config (dict): Configuration dictionary loaded from a JSON file,
+            containing the URL, selectors, and frames.
+        driver (webdriver.Chrome): The Chrome WebDriver instance used for
+            automation.
+        main_window (str): The handle of the main window for switching
+            between windows.
 
-    Returns:
-        None
+    Methods:
+        navigate_to(): Navigate to the URL specified in the config.
+        input_data(acctnumber, checknumber, amount, date): Input data into
+            the respective fields on the website.
+        click_element(element_name): Click an element specified by a selector
+            in the config.
+        wait_for_element(element_name, timeout=30): Wait for an element to be
+            clickable and return it.
+        switch_to_frame(frame_name): Switch to a specified frame.
+        switch_to_default_content(): Switch back to the main content (default
+            frame).
+        switch_to_new_window(): Switch to the newest window or pop-up.
+        switch_to_main_window(): Switch back to the main window.
+        close_window(): Close the current window.
+        quit(): Quit the WebDriver and close all windows.
     """
-    # Ensure the download directory exists
-    if not os.path.exists(download_directory):
-        os.makedirs(download_directory)
 
-    # Ensure the temporary download directory exists
-    temp_directory = "data/tmp/"
-    if not os.path.exists(temp_directory):
-        os.makedirs(temp_directory)
+    def __init__(self, config, download_dir="data/temp/"):
+        """
+        Initialize the WebAutomationHelper class.
 
-    # Fetch pending rows from the database
-    pending_rows = session.query(TblRCNInput).filter(TblRCNInput.status == 'pending').limit(10).all()
+        Args:
+            config (dict): The configuration dictionary containing the URL,
+                selectors, and frames.
+            download_dir (str, optional): The directory where files will be
+                downloaded. If not specified, uses the default directory.
+        """
+        self.config = config
+        self.driver = self._setup_driver(download_dir)
+        self.main_window = None
 
-    for row in pending_rows:
-        try:
-            # Use Selenium to download the PDF for this use case
-            download_pdf_with_selenium(row.account_number, row.check_number, row.amount, row.issue_date)
+    def _setup_driver(self, download_dir):
+        """Set up Chrome WebDriver with specified download directory."""
+        options = webdriver.ChromeOptions()
+        prefs = {
+            "download.prompt_for_download": False,
+            "download.directory_upgrade": True,
+            "safebrowsing.enabled": True,
+        }
 
-            # Read the downloaded PDF
-            temp_pdf_path = os.path.join(temp_directory, "Image.pdf")
-            with open(temp_pdf_path, "rb") as file:
-                pdf_blob = file.read()
+        if download_dir:
+            prefs["download.default_directory"] = download_dir
 
-            # Save the PDF as a BLOB in the TblRCNPDF table
-            pdf_record = TblRCNPDF(input_table_id=row.id, pdf_blob=pdf_blob)
-            session.add(pdf_record)
-            session.commit()
+        options.add_experimental_option("prefs", prefs)
+        return webdriver.Chrome(options=options)
 
-            # Move the PDF file to the final directory with a unique name based on the PDF table's ID
-            pdf_id = pdf_record.id
-            pdf_filename = f"{pdf_id}.pdf"
-            new_pdf_path = os.path.join(download_directory, pdf_filename)
-            shutil.move(temp_pdf_path, new_pdf_path)
+    def navigate_to(self):
+        """Navigate to the URL from the config."""
+        self.driver.get(self.config["url"])
+        self.main_window = self.driver.current_window_handle
 
-            # Update the status of the original data to 'downloaded'
-            stmt = update(TblRCNInput).where(TblRCNInput.id == row.id).values(status='downloaded')
-            session.execute(stmt)
+    def input_data(self, acctnumber, checknumber, amount, date):
+        """Input data into the respective fields on the website."""
+        self.driver.find_element(
+            By.CSS_SELECTOR, self.config["selectors"]["acct_number"]
+        ).send_keys(acctnumber)
+        self.driver.find_element(
+            By.CSS_SELECTOR, self.config["selectors"]["check_number"]
+        ).send_keys(checknumber)
+        self.driver.find_element(
+            By.CSS_SELECTOR, self.config["selectors"]["amount"]
+        ).send_keys(amount)
+        self.driver.find_element(
+            By.CSS_SELECTOR, self.config["selectors"]["date"]
+        ).send_keys(date)
 
-        except Exception as e:
-            # Handle any exceptions, e.g., download failures
-            print(f"Failed to download for row {row.id}: {e}")
-            session.rollback()  # Rollback in case of failure
-            stmt = update(TblRCNInput).where(TblRCNInput.id == row.id).values(status='failed')
-            session.execute(stmt)
+    def click_element(self, element_name):
+        """Click an element specified by a selector from the config."""
+        selector = self.config["selectors"][element_name]
+        element = self.driver.find_element(By.CSS_SELECTOR, selector)
+        element.click()
 
-        finally:
-            session.commit()
+    def wait_for_element(self, element_name, timeout=30):
+        """Wait for an element to be clickable and return it."""
+        selector = self.config["selectors"][element_name]
+        wait = WebDriverWait(self.driver, timeout)
+        return wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
 
-def download_pdf_with_selenium(acct_number, check_number, amount, date):
-    """
-    Automates the process of downloading a PDF using Selenium based on the provided account number, check number, amount, and date.
-    
-    The PDF is always downloaded to 'data/tmp/Image.pdf'.
-    
-    Args:
-        acct_number (str): The account number to input in the form.
-        check_number (str): The check number to input in the form.
-        amount (str): The amount to input in the form.
-        date (str): The date to input in the form.
-        
-    Returns:
-        None
-    """
-    # Initialize the Selenium WebAutomationHelper class
-    helper = WebAutomationHelper()
+    def switch_to_frame(self, frame_name):
+        """Switch to a specified frame from the config."""
+        frame_index = self.config["frames"][frame_name]
+        self.driver.switch_to.frame(frame_index)
 
-    # Perform the necessary steps to download the PDF
-    helper.navigate_to()
-    helper.input_data(acct_number, check_number, amount, date)
-    
-    # Specify the download directory and file name
-    temp_pdf_path = os.path.join("data/tmp/", "Image.pdf")
-    
-    # Download the PDF and save it to the temp directory
-    helper.download_pdf(temp_pdf_path)
+    def switch_to_default_content(self):
+        """Switch back to the main content (default frame)."""
+        self.driver.switch_to.default_content()
 
-    helper.quit()
+    def switch_to_new_window(self):
+        """Switch to the newest window or pop-up."""
+        wait = WebDriverWait(self.driver, 30)
+        wait.until(EC.number_of_windows_to_be(2))
+        new_window = [
+            window
+            for window in self.driver.window_handles
+            if window != self.main_window
+        ][0]
+        self.driver.switch_to.window(new_window)
+
+    def switch_to_main_window(self):
+        """Switch back to the main window."""
+        self.driver.switch_to.window(self.main_window)
+
+    def close_window(self):
+        """Close the current window."""
+        self.driver.close()
+
+    def quit(self):
+        """Quit the WebDriver and close all windows."""
+        self.driver.quit()

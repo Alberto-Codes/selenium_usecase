@@ -1,4 +1,5 @@
 import csv
+import shutil
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -18,21 +19,24 @@ class DataExportService:
         ocr_repo (OCRResultRepository): Repository for OCR result records.
         input_repo (InputRepository): Repository for input records related to
             the OCR results.
+        image_directory (Path): Directory where the images are stored.
     """
 
-    def __init__(self, session: Session, target_directory: str):
+    def __init__(self, session: Session, target_directory: str, image_directory: str):
         """
-        Initializes the DataExportService with a database session and a target
-        directory.
+        Initializes the DataExportService with a database session, a target
+        directory, and the image directory.
 
         Args:
             session (Session): The SQLAlchemy session to interact with the
                 database.
             target_directory (str): The path to the directory where data and
                 files should be exported.
+            image_directory (str): The directory where images are stored.
         """
         self.session = session
         self.target_directory = Path(target_directory)
+        self.image_directory = Path(image_directory)
         self.ocr_repo = OCRResultRepository(session)
         self.input_repo = InputRepository(session)
         self.target_directory.mkdir(parents=True, exist_ok=True)
@@ -75,7 +79,9 @@ class DataExportService:
             writer.writeheader()
 
             for ocr_record, input_record in records:
-                original_file_path = Path(ocr_record.image.file_path)
+                # Construct the file path using the stored image ID and image directory
+                original_file_path = self.image_directory / f"{ocr_record.image_id}.png"
+
                 if original_file_path.exists():
                     sub_dir = self.target_directory / original_file_path.stem
                     sub_dir.mkdir(parents=True, exist_ok=True)

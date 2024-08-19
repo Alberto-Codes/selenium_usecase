@@ -1,7 +1,10 @@
 from typing import List, Tuple
+
 from sqlalchemy.orm import Session
-from src.db.models.ocr_result import TblRCNOCRResult
+
 from src.db.models.input import TblRCNInput
+from src.db.models.ocr_result import TblRCNOCRResult
+
 
 class OCRResultRepository:
     """
@@ -49,11 +52,11 @@ class OCRResultRepository:
         Retrieves OCR records for matching based on the preprocessing type.
 
         Args:
-            preprocessing_type (str): The type of preprocessing applied to 
+            preprocessing_type (str): The type of preprocessing applied to
                 filter OCR results.
 
         Returns:
-            List[TblRCNOCRResult]: A list of OCR results that match the 
+            List[TblRCNOCRResult]: A list of OCR results that match the
                 preprocessing type.
         """
         return (
@@ -63,8 +66,7 @@ class OCRResultRepository:
         )
 
     def update_payee_match(
-        self, ocr_record: TblRCNOCRResult, matched: dict, 
-        possible_matches: List[str]
+        self, ocr_record: TblRCNOCRResult, matched: dict, possible_matches: List[str]
     ) -> None:
         """
         Updates the payee match status of an OCR record.
@@ -72,7 +74,7 @@ class OCRResultRepository:
         Args:
             ocr_record (TblRCNOCRResult): The OCR result record to update.
             matched (dict): A dictionary indicating whether matches were found.
-            possible_matches (List[str]): A list of possible matches (not 
+            possible_matches (List[str]): A list of possible matches (not
                 currently used in this logic).
 
         Returns:
@@ -86,22 +88,18 @@ class OCRResultRepository:
         Fetches OCR records where `payee_match` is 'no'.
 
         Returns:
-            List[TblRCNOCRResult]: A list of OCR records where `payee_match` 
+            List[TblRCNOCRResult]: A list of OCR records where `payee_match`
                 is 'no'.
         """
-        return (
-            self.session.query(TblRCNOCRResult)
-            .filter_by(payee_match="no")
-            .all()
-        )
+        return self.session.query(TblRCNOCRResult).filter_by(payee_match="no").all()
 
     def get_records_with_input(self) -> List[Tuple[TblRCNOCRResult, TblRCNInput]]:
         """
-        Fetch OCR results where `payee_match` is 'no' and join with the input 
+        Fetch OCR results where `payee_match` is 'no' and join with the input
         records.
 
         Returns:
-            List[Tuple[TblRCNOCRResult, TblRCNInput]]: A list of tuples 
+            List[Tuple[TblRCNOCRResult, TblRCNInput]]: A list of tuples
                 containing OCR results and their corresponding input records.
         """
         return (

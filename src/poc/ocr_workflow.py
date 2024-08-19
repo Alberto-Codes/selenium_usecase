@@ -1,9 +1,8 @@
 import numpy as np
+from image_processor import ImageProcessor
 from image_storage import ImageStorage
 from ocr_text_extractor import OCRTextExtractor
 from pdf_converter import PDFConverter
-
-from image_processor import ImageProcessor
 
 
 def process_and_store_image(pdf_blob, pdf_data_id):

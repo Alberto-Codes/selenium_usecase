@@ -7,9 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
-from PIL import Image
-
 from ocr_workflow import process_and_store_image
+from PIL import Image
 
 
 @pytest.fixture

@@ -45,6 +45,19 @@ class PDFProcessingService:
         )
         return pdf_record.id
 
+    def load_pdf_as_blob(self, pdf_path: str) -> bytes:
+        """
+        Loads a PDF file from disk and converts it into a binary large object (BLOB).
+
+        Args:
+            pdf_path (str): The path to the PDF file on disk.
+
+        Returns:
+            bytes: The PDF as a BLOB.
+        """
+        with open(pdf_path, "rb") as pdf_file:
+            return pdf_file.read()
+
     def convert_pdf_to_images(
         self,
         pdf_blob: bytes,

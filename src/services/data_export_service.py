@@ -1,12 +1,9 @@
 import csv
-import shutil
 from pathlib import Path
-
+import shutil
 from sqlalchemy.orm import Session
-
 from src.db.repositories.input_repository import InputRepository
 from src.db.repositories.ocr_result_repository import OCRResultRepository
-
 
 class DataExportService:
     """
@@ -19,20 +16,22 @@ class DataExportService:
         ocr_repo (OCRResultRepository): Repository for OCR result records.
         input_repo (InputRepository): Repository for input records related to
             the OCR results.
-        image_directory (Path): Directory where the images are stored.
+        image_directory (Path): Directory where the original images are stored.
+        images_output_dir (Path): Directory within the target directory where 
+            images will be copied.
     """
 
     def __init__(self, session: Session, target_directory: str, image_directory: str):
         """
         Initializes the DataExportService with a database session, a target
-        directory, and the image directory.
+        directory, and an image directory.
 
         Args:
             session (Session): The SQLAlchemy session to interact with the
                 database.
             target_directory (str): The path to the directory where data and
                 files should be exported.
-            image_directory (str): The directory where images are stored.
+            image_directory (str): The path to the directory where images are stored.
         """
         self.session = session
         self.target_directory = Path(target_directory)
@@ -41,12 +40,16 @@ class DataExportService:
         self.input_repo = InputRepository(session)
         self.target_directory.mkdir(parents=True, exist_ok=True)
 
+        # Create a single subdirectory for all images within the target directory
+        self.images_output_dir = self.target_directory / "images"
+        self.images_output_dir.mkdir(parents=True, exist_ok=True)
+
     def export_data_with_files(self) -> None:
         """
         Exports data and associated files to the target directory.
 
         This method retrieves records from the OCR and Input repositories,
-        copies the associated files to a subdirectory within the target
+        copies the associated files to a single subdirectory within the target
         directory, and generates a CSV file containing data from both the
         input records and the OCR results.
 
@@ -79,14 +82,11 @@ class DataExportService:
             writer.writeheader()
 
             for ocr_record, input_record in records:
-                # Construct the file path using the stored image ID and image directory
+                # Construct the path to the image file using the image ID
                 original_file_path = self.image_directory / f"{ocr_record.image_id}.png"
-
+                
                 if original_file_path.exists():
-                    sub_dir = self.target_directory / original_file_path.stem
-                    sub_dir.mkdir(parents=True, exist_ok=True)
-
-                    destination_path = sub_dir / original_file_path.name
+                    destination_path = self.images_output_dir / original_file_path.name
                     shutil.copy2(original_file_path, destination_path)
 
                     writer.writerow(

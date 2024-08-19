@@ -5,7 +5,7 @@ from src.services.data_export_service import DataExportService
 
 
 @task
-def export_data_task(target_directory: str) -> None:
+def export_data_task(target_directory: str, image_directory: str) -> None:
     """
     Task to export data and associated files to the specified target directory.
 
@@ -16,17 +16,21 @@ def export_data_task(target_directory: str) -> None:
     Args:
         target_directory (str): The path to the directory where data and
             files should be exported.
+        image_directory (str): The path to the directory where images are stored.
     """
     session = get_session(engine)
     try:
-        export_service = DataExportService(session, target_directory)
+        export_service = DataExportService(session, target_directory, image_directory)
         export_service.export_data_with_files()
     finally:
         session.close()
 
 
 @flow
-def export_data_flow(target_directory: str = "path/to/output_directory") -> None:
+def export_data_flow(
+    target_directory: str = "path/to/output_directory",
+    image_directory: str = "path/to/images",
+) -> None:
     """
     Prefect flow to manage the data export process.
 
@@ -35,10 +39,11 @@ def export_data_flow(target_directory: str = "path/to/output_directory") -> None
 
     Args:
         target_directory (str, optional): The path to the directory where data
-            and files should be exported. Defaults to
-            "path/to/output_directory".
+            and files should be exported. Defaults to "path/to/output_directory".
+        image_directory (str, optional): The path to the directory where images
+            are stored. Defaults to "path/to/images".
     """
-    export_data_task(target_directory)
+    export_data_task(target_directory, image_directory)
 
 
 if __name__ == "__main__":

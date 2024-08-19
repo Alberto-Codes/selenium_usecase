@@ -1,9 +1,12 @@
 import csv
-from pathlib import Path
 import shutil
+from pathlib import Path
+
 from sqlalchemy.orm import Session
+
 from src.db.repositories.input_repository import InputRepository
 from src.db.repositories.ocr_result_repository import OCRResultRepository
+
 
 class DataExportService:
     """
@@ -17,7 +20,7 @@ class DataExportService:
         input_repo (InputRepository): Repository for input records related to
             the OCR results.
         image_directory (Path): Directory where the original images are stored.
-        images_output_dir (Path): Directory within the target directory where 
+        images_output_dir (Path): Directory within the target directory where
             images will be copied.
     """
 
@@ -84,7 +87,7 @@ class DataExportService:
             for ocr_record, input_record in records:
                 # Construct the path to the image file using the image ID
                 original_file_path = self.image_directory / f"{ocr_record.image_id}.png"
-                
+
                 if original_file_path.exists():
                     destination_path = self.images_output_dir / original_file_path.name
                     shutil.copy2(original_file_path, destination_path)

@@ -1,8 +1,6 @@
-# src/flows/pdf_batch_download_flow.py
-
 from prefect import flow, task
 
-from src.db.db_connect import get_session
+from src.db.db_connect import engine, get_session
 from src.db.repositories.batch_repository import BatchRepository
 from src.db.repositories.input_repository import InputRepository
 from src.scrapers.pdf_site_scraper import PDFSiteScraper
@@ -46,7 +44,8 @@ def pdf_batch_download_flow(batch_id: str, limit: int = 10) -> None:
     Returns:
         None
     """
-    with get_session() as session:
+    session = get_session(engine)
+    try:
         input_repo = InputRepository(session)
         batch_repo = BatchRepository(session)
         download_service = DownloadService(session)
@@ -65,3 +64,5 @@ def pdf_batch_download_flow(batch_id: str, limit: int = 10) -> None:
 
         batch_repo.update_batch_status(batch_id, "completed")
         print(f"Batch {batch_id} processing complete.")
+    finally:
+        session.close()

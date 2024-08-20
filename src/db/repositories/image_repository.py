@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-
 from src.db.models.image import TblRCNImage
 
 
@@ -24,12 +23,17 @@ class ImageRepository:
         Creates a new image record in the database.
 
         Args:
+            pdf_id (str): The ID of the corresponding TblRCNPDF record.
             input_table_id (str): The ID of the corresponding TblRCNInput record.
             image_blob (bytes): The image data to be stored as a BLOB.
             processing_type (str): The type of image processing applied.
 
         Returns:
             TblRCNImage: The created image record.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: If there is an error during the 
+            database transaction.
         """
         image_record = TblRCNImage(
             input_table_id=input_table_id,
@@ -40,3 +44,20 @@ class ImageRepository:
         self.session.add(image_record)
         self.session.commit()
         return image_record
+
+    def get_image_by_id(self, image_id: str) -> TblRCNImage:
+        """
+        Fetches an image record by its ID.
+
+        Args:
+            image_id (str): The ID of the image record to fetch.
+
+        Returns:
+            TblRCNImage: The image record with the specified ID, or None if 
+            not found.
+
+        Raises:
+            sqlalchemy.exc.SQLAlchemyError: If there is an error during the 
+            database query.
+        """
+        return self.session.query(TblRCNImage).filter_by(id=image_id).first()

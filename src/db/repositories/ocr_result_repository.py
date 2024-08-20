@@ -39,7 +39,7 @@ class OCRResultRepository:
             image_id=image_id,
             preprocessing_type=preprocessing_type,
             extracted_text=extracted_text,
-            payee_match="no",  # Assume 'no' initially; updated later during payee matching
+            payee_match=None,
         )
         self.session.add(ocr_result)
         self.session.commit()
@@ -66,7 +66,8 @@ class OCRResultRepository:
         )
 
     def update_payee_match(
-        self, ocr_record: TblRCNOCRResult, matched: dict, possible_matches: List[str]
+        self, ocr_record: TblRCNOCRResult, matched: dict, 
+        possible_matches: List[str]
     ) -> None:
         """
         Updates the payee match status of an OCR record.
@@ -80,22 +81,22 @@ class OCRResultRepository:
         Returns:
             None
         """
-        ocr_record.payee_match = "yes" if any(matched.values()) else "no"
+        ocr_record.payee_match = 1 if any(matched.values()) else 0
         self.session.commit()
 
     def get_records_with_zero_payee_match(self) -> List[TblRCNOCRResult]:
         """
-        Fetches OCR records where `payee_match` is 'no'.
+        Fetches OCR records where `payee_match` is 0.
 
         Returns:
             List[TblRCNOCRResult]: A list of OCR records where `payee_match`
-                is 'no'.
+                is 0.
         """
-        return self.session.query(TblRCNOCRResult).filter_by(payee_match="no").all()
+        return self.session.query(TblRCNOCRResult).filter_by(payee_match=0).all()
 
     def get_records_with_input(self) -> List[Tuple[TblRCNOCRResult, TblRCNInput]]:
         """
-        Fetch OCR results where `payee_match` is 'no' and join with the input
+        Fetch OCR results where `payee_match` is 0 and join with the input
         records.
 
         Returns:
@@ -105,6 +106,22 @@ class OCRResultRepository:
         return (
             self.session.query(TblRCNOCRResult, TblRCNInput)
             .join(TblRCNInput, TblRCNOCRResult.image_id == TblRCNInput.id)
-            .filter(TblRCNOCRResult.payee_match == "no")
+            .filter(TblRCNOCRResult.payee_match == 0)
+            .all()
+        )
+
+    def get_ocr_results_by_image_id(self, image_id: str) -> List[TblRCNOCRResult]:
+        """
+        Retrieves OCR results based on the image ID.
+
+        Args:
+            image_id (str): The ID of the image associated with the OCR results.
+
+        Returns:
+            List[TblRCNOCRResult]: A list of OCR results that match the image ID.
+        """
+        return (
+            self.session.query(TblRCNOCRResult)
+            .filter_by(image_id=image_id)
             .all()
         )

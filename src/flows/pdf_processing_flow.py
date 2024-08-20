@@ -7,6 +7,7 @@ from src.db.repositories.input_repository import InputRepository
 from src.db.repositories.pdf_repository import PDFRepository
 from src.services.ocr_extraction_service import OCRExtractionService
 from src.services.pdf_processing_service import PDFProcessingService
+from src.services.payee_matching_service import PayeeMatchingService
 
 
 @task
@@ -64,17 +65,33 @@ def extract_ocr_from_images(session,
         ocr_service.extract_and_save_ocr_results(image_blob, image_id)
 
 
+@task
+def match_payees(session):
+    """
+    Performs payee matching on OCR records and updates the database with 
+    results.
+
+    Args:
+        session (Session): The SQLAlchemy session for database operations.
+    """
+    payee_service = PayeeMatchingService(session)
+    ocr_records = payee_service.fetch_ocr_records()
+
+    for ocr_record in ocr_records:
+        payee_service.match_and_update_payees(ocr_record)
+
+
 @flow
 def pdf_processing_flow(batch_id: str):
     """
-    Main flow to process a batch of input records by converting PDFs to 
-    images and extracting OCR text.
+    Main flow to process a batch of input records by converting PDFs to images,
+    extracting OCR text, and matching payees.
 
     Args:
         batch_id (str): The batch ID to process.
     """
     session = get_session(engine)
-
+    
     try:
         # Fetch input records by batch ID
         input_records = fetch_input_records(session, batch_id).result()
@@ -95,6 +112,9 @@ def pdf_processing_flow(batch_id: str):
 
             else:
                 print(f"Skipping record {record.id}: No PDF or empty PDF blob found.")
+
+        # Perform payee matching after OCR extraction
+        match_payees(session).result()
 
         # Update the input records' status to reflect that processing is complete
         input_repo.update_records_status(

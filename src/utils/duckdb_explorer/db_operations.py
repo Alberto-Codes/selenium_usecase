@@ -1,109 +1,74 @@
-# main.py
+import duckdb
+import pandas as pd
+from typing import List, Optional
 
-import streamlit as st
-import altair as alt
-import time
-from config import DB_PATH
-from db_operations import initialize_connection, fetch_tables, fetch_columns, fetch_data
-from data_processing import construct_query, convert_df_to_csv
+def initialize_connection(db_path: str) -> duckdb.DuckDBPyConnection:
+    """Initializes a connection to the DuckDB database.
 
-@st.cache_resource
-def get_connection():
-    """Initializes and caches the database connection.
+    Args:
+        db_path (str): Path to the DuckDB database file.
 
     Returns:
         duckdb.DuckDBPyConnection: A connection object to interact with the 
         database.
+
+    Raises:
+        ConnectionError: If the connection to the database fails.
     """
-    return initialize_connection(DB_PATH)
+    try:
+        return duckdb.connect(database=db_path, read_only=True)
+    except duckdb.Error as e:
+        raise ConnectionError(f"Failed to connect to database: {e}")
 
-# Initialize connection
-con = get_connection()
+def fetch_tables(con: duckdb.DuckDBPyConnection) -> List[str]:
+    """Fetches the list of table names from the database.
 
-# Sidebar for table and query selection
-st.sidebar.title("Database Explorer")
-tables = fetch_tables(con)
+    Args:
+        con (duckdb.DuckDBPyConnection): The database connection object.
 
-# Table selection
-selected_table = st.sidebar.selectbox('Select a table to explore', tables)
+    Returns:
+        List[str]: A list of table names available in the database.
 
-# Fetch columns from the selected table
-columns = fetch_columns(con, selected_table)
+    Raises:
+        ValueError: If fetching tables fails.
+    """
+    try:
+        return con.execute("SHOW TABLES").fetchdf()['name'].tolist()
+    except duckdb.Error as e:
+        raise ValueError(f"Failed to fetch tables: {e}")
 
-# Multiselect for columns
-selected_columns = st.sidebar.multiselect(
-    'Select columns to display', columns, default=columns)
+def fetch_columns(con: duckdb.DuckDBPyConnection, table_name: str) -> List[str]:
+    """Fetches the list of column names for a selected table.
 
-# Optional: Add filtering options
-where_clause = st.sidebar.text_input('Enter WHERE clause (optional)')
+    Args:
+        con (duckdb.DuckDBPyConnection): The database connection object.
+        table_name (str): The name of the table to fetch columns from.
 
-# Construct SQL query
-query = construct_query(selected_columns, selected_table, where_clause)
+    Returns:
+        List[str]: A list of column names for the selected table.
 
-# Execute and display the query with a progress spinner
-st.write(f"Executing Query: {query}")
-try:
-    with st.spinner('Fetching data...'):
-        df = fetch_data(con, query)
-    st.write(df)
-except Exception as e:
-    st.error(f"An error occurred: {e}")
+    Raises:
+        ValueError: If fetching columns fails.
+    """
+    try:
+        return con.execute(f"DESCRIBE {table_name}").fetchdf()['name'].tolist()
+    except duckdb.Error as e:
+        raise ValueError(f"Failed to fetch columns for table {table_name}: {e}")
 
-# Real-time updates and data summary
-if st.sidebar.checkbox('Enable Real-time Updates'):
-    refresh_interval = st.sidebar.slider(
-        'Refresh interval (seconds)', min_value=1, max_value=60, value=5)
-    placeholder = st.empty()
+def fetch_data(con: duckdb.DuckDBPyConnection, query: str) -> pd.DataFrame:
+    """Executes the given SQL query and fetches the result as a DataFrame.
 
-    while True:
-        df = fetch_data(con, query)
-        placeholder.write(df)
-        time.sleep(refresh_interval)
-        st.experimental_rerun()
-else:
-    st.write(df)
+    Args:
+        con (duckdb.DuckDBPyConnection): The database connection object.
+        query (str): The SQL query to execute.
 
-# Data summary
-if st.sidebar.checkbox('Show Summary'):
-    st.write(df.describe())
+    Returns:
+        pd.DataFrame: The query result as a pandas DataFrame.
 
-# Conditional alerts based on data
-if df.shape[0] > 0 and selected_columns:  # Ensure there's data to check
-    if df[selected_columns[0]].max() > 100:
-        st.warning(f"Warning: Maximum value in {selected_columns[0]} exceeds 100!")
-
-# Data visualization using Altair
-st.sidebar.subheader("Visualize Data")
-x_axis = st.sidebar.selectbox('Select X-axis for plot', columns)
-y_axis = st.sidebar.selectbox('Select Y-axis for plot', columns)
-
-chart = alt.Chart(df).mark_circle(size=60).encode(
-    x=x_axis,
-    y=y_axis,
-    tooltip=[x_axis, y_axis]
-).interactive()
-
-st.altair_chart(chart, use_container_width=True)
-
-# Data export
-csv_data = convert_df_to_csv(df)
-
-st.download_button(
-    label="Download Data as CSV",
-    data=csv_data,
-    file_name=f"{selected_table}_data.csv",
-    mime="text/csv",
-)
-
-# Custom HTML or widgets (Optional)
-st.sidebar.subheader("Additional Options")
-if st.sidebar.checkbox('Show Custom HTML'):
-    st.components.v1.html(
-        """
-        <div style="text-align: center;">
-            <h1>Custom HTML in Streamlit!</h1>
-            <button onclick="alert('Hello from Streamlit!')">Click Me</button>
-        </div>
-        """,
-        height=200,
-    )
+    Raises:
+        ValueError: If query execution fails.
+    """
+    try:
+        return con.execute(query).fetchdf()
+    except duckdb.Error as e:
+        raise ValueError(f"Failed to execute query: {e}")

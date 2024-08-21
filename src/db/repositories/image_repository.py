@@ -32,7 +32,7 @@ class ImageRepository:
             TblRCNImage: The created image record.
 
         Raises:
-            sqlalchemy.exc.SQLAlchemyError: If there is an error during the 
+            sqlalchemy.exc.SQLAlchemyError: If there is an error during the
             database transaction.
         """
         image_record = TblRCNImage(
@@ -53,11 +53,11 @@ class ImageRepository:
             image_id (str): The ID of the image record to fetch.
 
         Returns:
-            TblRCNImage: The image record with the specified ID, or None if 
+            TblRCNImage: The image record with the specified ID, or None if
             not found.
 
         Raises:
-            sqlalchemy.exc.SQLAlchemyError: If there is an error during the 
+            sqlalchemy.exc.SQLAlchemyError: If there is an error during the
             database query.
         """
         return self.session.query(TblRCNImage).filter_by(id=image_id).first()

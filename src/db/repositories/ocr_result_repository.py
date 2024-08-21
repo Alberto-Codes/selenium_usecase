@@ -66,8 +66,7 @@ class OCRResultRepository:
         )
 
     def update_payee_match(
-        self, ocr_record: TblRCNOCRResult, matched: dict, 
-        possible_matches: List[str]
+        self, ocr_record: TblRCNOCRResult, matched: dict, possible_matches: List[str]
     ) -> None:
         """
         Updates the payee match status of an OCR record.
@@ -120,8 +119,4 @@ class OCRResultRepository:
         Returns:
             List[TblRCNOCRResult]: A list of OCR results that match the image ID.
         """
-        return (
-            self.session.query(TblRCNOCRResult)
-            .filter_by(image_id=image_id)
-            .all()
-        )
+        return self.session.query(TblRCNOCRResult).filter_by(image_id=image_id).all()

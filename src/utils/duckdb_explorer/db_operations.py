@@ -1,6 +1,7 @@
 import duckdb
 import pandas as pd
-from typing import List, Optional
+from typing import List
+
 
 def initialize_connection(db_path: str) -> duckdb.DuckDBPyConnection:
     """Initializes a connection to the DuckDB database.
@@ -9,7 +10,7 @@ def initialize_connection(db_path: str) -> duckdb.DuckDBPyConnection:
         db_path (str): Path to the DuckDB database file.
 
     Returns:
-        duckdb.DuckDBPyConnection: A connection object to interact with the 
+        duckdb.DuckDBPyConnection: A connection object to interact with the
         database.
 
     Raises:
@@ -19,6 +20,7 @@ def initialize_connection(db_path: str) -> duckdb.DuckDBPyConnection:
         return duckdb.connect(database=db_path, read_only=True)
     except duckdb.Error as e:
         raise ConnectionError(f"Failed to connect to database: {e}")
+
 
 def fetch_tables(con: duckdb.DuckDBPyConnection) -> List[str]:
     """Fetches the list of table names from the database.
@@ -33,9 +35,10 @@ def fetch_tables(con: duckdb.DuckDBPyConnection) -> List[str]:
         ValueError: If fetching tables fails.
     """
     try:
-        return con.execute("SHOW TABLES").fetchdf()['name'].tolist()
+        return con.execute("SHOW TABLES").fetchdf()["name"].tolist()
     except duckdb.Error as e:
         raise ValueError(f"Failed to fetch tables: {e}")
+
 
 def fetch_columns(con: duckdb.DuckDBPyConnection, table_name: str) -> List[str]:
     """Fetches the list of column names for a selected table.
@@ -51,9 +54,10 @@ def fetch_columns(con: duckdb.DuckDBPyConnection, table_name: str) -> List[str]:
         ValueError: If fetching columns fails.
     """
     try:
-        return con.execute(f"DESCRIBE {table_name}").fetchdf()['name'].tolist()
+        return con.execute(f"DESCRIBE {table_name}").fetchdf()["name"].tolist()
     except duckdb.Error as e:
         raise ValueError(f"Failed to fetch columns for table {table_name}: {e}")
+
 
 def fetch_data(con: duckdb.DuckDBPyConnection, query: str) -> pd.DataFrame:
     """Executes the given SQL query and fetches the result as a DataFrame.

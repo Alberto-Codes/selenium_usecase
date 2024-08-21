@@ -3,9 +3,8 @@ import sys
 
 # Ensure the src directory is in the path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import numpy as np
 import pytest
 from ocr_workflow import process_and_store_image
 from PIL import Image

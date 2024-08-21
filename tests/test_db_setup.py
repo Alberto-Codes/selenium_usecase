@@ -1,31 +1,31 @@
 """
-This module contains unit tests for the database setup and ORM models defined 
-in the `db_setup.py` module. The tests verify the creation, destruction, and 
-basic CRUD operations on the database tables using SQLAlchemy with a DuckDB 
+This module contains unit tests for the database setup and ORM models defined
+in the `db_setup.py` module. The tests verify the creation, destruction, and
+basic CRUD operations on the database tables using SQLAlchemy with a DuckDB
 database engine.
 
 Fixtures:
-    engine: Provides a DuckDB database engine for testing purposes. It creates 
-        a temporary in-memory database for testing and ensures cleanup after 
+    engine: Provides a DuckDB database engine for testing purposes. It creates
+        a temporary in-memory database for testing and ensures cleanup after
         tests are complete.
-    session: Provides a SQLAlchemy session bound to the DuckDB database engine 
+    session: Provides a SQLAlchemy session bound to the DuckDB database engine
         for database operations during testing.
 
 Tests:
-    test_create_database(engine): Verifies that the database and tables are 
+    test_create_database(engine): Verifies that the database and tables are
         created successfully by checking the existence of each table.
     test_destroy_database(): Ensures that the database file is destroyed successfully.
-    test_get_session(engine): Confirms that a new SQLAlchemy session is created 
+    test_get_session(engine): Confirms that a new SQLAlchemy session is created
         successfully.
-    test_tbl_rcn_input(session): Verifies that records can be inserted into the 
+    test_tbl_rcn_input(session): Verifies that records can be inserted into the
         `TblRCNInput` table.
-    test_tbl_rcn_pdf(session): Verifies that records can be inserted into the 
+    test_tbl_rcn_pdf(session): Verifies that records can be inserted into the
         `TblRCNPDF` table, with appropriate foreign key relationships.
-    test_tbl_rcn_image(session): Verifies that records can be inserted into the 
+    test_tbl_rcn_image(session): Verifies that records can be inserted into the
         `TblRCNImage` table, with appropriate foreign key relationships.
-    test_tbl_rcn_ocr_result(session): Verifies that records can be inserted into 
+    test_tbl_rcn_ocr_result(session): Verifies that records can be inserted into
         the `TblRCNOCRResult` table, with appropriate foreign key relationships.
-    test_tbl_rcn_batch_status(session): Verifies that records can be inserted into 
+    test_tbl_rcn_batch_status(session): Verifies that records can be inserted into
         the `TblRCNBatchStatus` table.
 
 Example usage:
@@ -41,9 +41,16 @@ import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from db.db_setup import (TblRCNBatchStatus, TblRCNImage, TblRCNInput,
-                         TblRCNOCRResult, TblRCNPDF, create_database,
-                         destroy_database, get_session)
+from db.db_setup import (
+    TblRCNBatchStatus,
+    TblRCNImage,
+    TblRCNInput,
+    TblRCNOCRResult,
+    TblRCNPDF,
+    create_database,
+    destroy_database,
+    get_session,
+)
 
 
 @pytest.fixture(scope="module")

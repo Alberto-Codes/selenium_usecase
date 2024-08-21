@@ -2,7 +2,6 @@ import os
 import uuid
 
 import pandas as pd
-from PIL import Image
 
 # Directory containing the images
 image_dir = os.path.abspath(

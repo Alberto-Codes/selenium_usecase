@@ -16,9 +16,9 @@ duckdb-engine = "*"
 prefect = "*"
 fuzzywuzzy = "*"
 
+
 [dev-packages]
-black = "*"
-isort = "*"
+ruff = "*"
 pytest = "*"
 
 [requires]

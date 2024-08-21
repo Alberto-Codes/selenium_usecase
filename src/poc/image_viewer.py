@@ -1,5 +1,3 @@
-import io
-
 import cv2
 import duckdb
 import numpy as np

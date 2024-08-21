@@ -1,18 +1,18 @@
 """
-This script contains unit tests for the `load_dataset_into_db` function 
-and the `setup_database` function using the pytest framework. The tests 
-verify that the functions work correctly by creating temporary 
-spreadsheets and databases, loading data into the database, and 
+This script contains unit tests for the `load_dataset_into_db` function
+and the `setup_database` function using the pytest framework. The tests
+verify that the functions work correctly by creating temporary
+spreadsheets and databases, loading data into the database, and
 validating the results.
 
 Fixtures:
-    temp_spreadsheet: Creates a temporary Excel spreadsheet with sample 
+    temp_spreadsheet: Creates a temporary Excel spreadsheet with sample
         data for testing.
     temp_db: Creates a temporary SQLite database for testing.
 
 Tests:
-    test_load_dataset_into_db: Tests the `load_dataset_into_db` function 
-        by verifying that the data is correctly loaded into the database 
+    test_load_dataset_into_db: Tests the `load_dataset_into_db` function
+        by verifying that the data is correctly loaded into the database
         and the table contents match the expected values.
 
 Modules:

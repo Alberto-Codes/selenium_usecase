@@ -1,29 +1,29 @@
 """
-This script contains unit tests for the `download_manager` module, 
-including the functions `download_pdf_with_selenium`, `load_config`, and 
-`process_rows_for_download`. The tests use pytest and unittest.mock to 
-mock dependencies such as database connections and Selenium WebDriver, 
+This script contains unit tests for the `download_manager` module,
+including the functions `download_pdf_with_selenium`, `load_config`, and
+`process_rows_for_download`. The tests use pytest and unittest.mock to
+mock dependencies such as database connections and Selenium WebDriver,
 allowing for isolated and controlled testing of the module's functionality.
 
 Fixtures:
-    mock_db: Mocks the SQLite database connection and cursor for testing 
+    mock_db: Mocks the SQLite database connection and cursor for testing
         database interactions.
-    mock_helper: Mocks the WebAutomationHelper class to test Selenium-based 
+    mock_helper: Mocks the WebAutomationHelper class to test Selenium-based
         functions without launching a real browser.
 
 Tests:
-    test_load_config: Tests the `load_config` function to ensure it correctly 
+    test_load_config: Tests the `load_config` function to ensure it correctly
         loads configuration from a JSON file.
-    test_process_rows_for_download: Tests the `process_rows_for_download` 
-        function to verify that it processes database rows correctly, 
+    test_process_rows_for_download: Tests the `process_rows_for_download`
+        function to verify that it processes database rows correctly,
         including downloading PDFs and updating the database.
-    test_download_pdf_with_selenium: Tests the `download_pdf_with_selenium` 
-        function to ensure that it navigates and interacts with a web page 
+    test_download_pdf_with_selenium: Tests the `download_pdf_with_selenium`
+        function to ensure that it navigates and interacts with a web page
         as expected using the WebAutomationHelper.
 
 Modules:
-    - download_manager: Contains the `download_pdf_with_selenium`, 
-      `load_config`, and `process_rows_for_download` functions for managing 
+    - download_manager: Contains the `download_pdf_with_selenium`,
+      `load_config`, and `process_rows_for_download` functions for managing
       downloads and database operations.
 
 Example usage:
@@ -38,8 +38,11 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
-from download_manager import (download_pdf_with_selenium, load_config,
-                              process_rows_for_download)
+from download_manager import (
+    download_pdf_with_selenium,
+    load_config,
+    process_rows_for_download,
+)
 
 
 @pytest.fixture
@@ -106,12 +109,11 @@ def test_process_rows_for_download(mock_db):
     mock_conn = MagicMock()
     mock_conn.cursor.return_value = mock_db
 
-    with patch("download_manager.download_pdf_with_selenium") as mock_download, patch(
+    with patch("download_manager.download_pdf_with_selenium"), patch(
         "download_manager.shutil.move"
-    ) as mock_move, patch("builtins.open", new_callable=MagicMock) as mock_open, patch(
+    ), patch("builtins.open", new_callable=MagicMock) as mock_open, patch(
         "download_manager.get_db_connection", return_value=(mock_conn, mock_db)
     ):
-
         mock_open.return_value.__enter__.return_value.read.return_value = b"PDF content"
 
         process_rows_for_download()

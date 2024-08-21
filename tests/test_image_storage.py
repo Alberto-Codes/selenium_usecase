@@ -1,19 +1,19 @@
 """
-This script contains unit tests for the `ImageStorage` class, specifically 
-testing the `save_image_blob` method using pytest and unittest's mocking 
-capabilities. The tests verify that the method correctly stores images as 
+This script contains unit tests for the `ImageStorage` class, specifically
+testing the `save_image_blob` method using pytest and unittest's mocking
+capabilities. The tests verify that the method correctly stores images as
 BLOBs in the database, both with and without OCR text.
 
 Tests:
-    test_save_image_blob: Tests the `save_image_blob` method to ensure it 
-        correctly inserts an image BLOB with associated processing type and 
+    test_save_image_blob: Tests the `save_image_blob` method to ensure it
+        correctly inserts an image BLOB with associated processing type and
         OCR text into the database.
-    test_save_image_blob_without_ocr_text: Tests the `save_image_blob` method 
-        to ensure it correctly inserts an image BLOB with associated 
+    test_save_image_blob_without_ocr_text: Tests the `save_image_blob` method
+        to ensure it correctly inserts an image BLOB with associated
         processing type into the database without OCR text.
 
 Modules:
-    - image_storage: Contains the `ImageStorage` class responsible for 
+    - image_storage: Contains the `ImageStorage` class responsible for
       storing images as BLOBs in the database.
 
 Example usage:
@@ -23,13 +23,10 @@ Example usage:
 import os
 import sys
 
-import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
-import sqlite3
 from unittest.mock import MagicMock, patch
 
-import cv2
 import numpy as np
 from image_storage import ImageStorage
 

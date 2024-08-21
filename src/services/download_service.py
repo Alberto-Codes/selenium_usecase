@@ -34,7 +34,7 @@ class DownloadService:
         Args:
             row: The record containing details for downloading the PDF.
             scraper (PDFSiteScraper): Scraper to execute the web download steps.
-            download_directory (str): Directory to store downloaded PDFs. 
+            download_directory (str): Directory to store downloaded PDFs.
                 Defaults to "data/stored_pdfs".
 
         Returns:

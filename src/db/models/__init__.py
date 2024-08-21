@@ -5,10 +5,7 @@ model classes to ensure they are registered properly with the ORM.
 
 from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
-
 from .batch_status import TblRCNBatchStatus
-# Import all your models here so they get registered properly
 from .image import TblRCNImage
 from .input import TblRCNInput
 from .ocr_result import TblRCNOCRResult
@@ -22,3 +19,6 @@ __all__ = [
     "TblRCNOCRResult",
     "TblRCNBatchStatus",
 ]
+
+
+Base = declarative_base()

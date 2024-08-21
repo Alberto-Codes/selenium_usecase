@@ -40,9 +40,7 @@ class PayeeMatchingService:
         """
         return self.ocr_repo.get_ocr_results_by_image_id(image_id)
 
-    def match_and_update_payees(
-        self, ocr_record
-    ) -> Tuple[Dict[str, bool], List[str]]:
+    def match_and_update_payees(self, ocr_record) -> Tuple[Dict[str, bool], List[str]]:
         """
         Matches payees against OCR-extracted text and updates the database with
         the results.
@@ -57,10 +55,10 @@ class PayeeMatchingService:
         """
         # Fetch the image record associated with the OCR record using the repo
         image_record = self.image_repo.get_image_by_id(ocr_record.image_id)
-        
+
         # Fetch the input record associated with the image record using the repo
         input_record = self.input_repo.get_input_by_id(image_record.input_table_id)
-        
+
         payees = [input_record.payee_1, input_record.payee_2]
 
         matched, possible_matches = self.matcher.match_payees(

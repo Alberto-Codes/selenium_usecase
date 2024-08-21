@@ -1,42 +1,42 @@
 """
-This script contains unit tests for the `WebAutomationHelper` class and 
-related functions using the pytest framework and unittest's mocking 
-capabilities. The tests ensure that the Selenium-based web automation 
-functions are working correctly, by mocking the Selenium WebDriver 
+This script contains unit tests for the `WebAutomationHelper` class and
+related functions using the pytest framework and unittest's mocking
+capabilities. The tests ensure that the Selenium-based web automation
+functions are working correctly, by mocking the Selenium WebDriver
 interactions.
 
 Fixtures:
-    mock_driver: Mocks the Selenium WebDriver to test the WebAutomationHelper 
+    mock_driver: Mocks the Selenium WebDriver to test the WebAutomationHelper
         class without launching an actual browser.
-    config: Provides a sample configuration dictionary used to test 
+    config: Provides a sample configuration dictionary used to test
         WebAutomationHelper.
 
 Tests:
-    test_navigate_to: Verifies that the WebDriver navigates to the correct 
+    test_navigate_to: Verifies that the WebDriver navigates to the correct
         URL.
-    test_input_data: Tests if the input data method correctly locates and 
+    test_input_data: Tests if the input data method correctly locates and
         fills in the form fields.
-    test_click_element: Checks if the click_element method correctly clicks 
+    test_click_element: Checks if the click_element method correctly clicks
         on the specified element.
-    test_wait_for_element: Ensures that the wait_for_element method waits 
+    test_wait_for_element: Ensures that the wait_for_element method waits
         for an element to be clickable.
-    test_switch_to_frame: Verifies that the WebDriver switches to the 
+    test_switch_to_frame: Verifies that the WebDriver switches to the
         correct frame.
-    test_switch_to_default_content: Ensures the WebDriver switches back to 
+    test_switch_to_default_content: Ensures the WebDriver switches back to
         the default content.
-    test_switch_to_new_window: Tests if the WebDriver switches to the new 
+    test_switch_to_new_window: Tests if the WebDriver switches to the new
         window.
-    test_switch_to_main_window: Ensures the WebDriver switches back to the 
+    test_switch_to_main_window: Ensures the WebDriver switches back to the
         main window.
     test_close_window: Verifies that the current window is closed.
     test_quit: Checks if the WebDriver quits and closes all windows.
-    test_load_config: Tests the load_config function to ensure it correctly 
+    test_load_config: Tests the load_config function to ensure it correctly
         loads configuration from a JSON file.
-    test_process_use_cases: Tests the entire process_use_cases function, 
+    test_process_use_cases: Tests the entire process_use_cases function,
         ensuring the automation workflow executes correctly with mock data.
 
 Modules:
-    - selenium_helper: Contains the WebAutomationHelper class and related 
+    - selenium_helper: Contains the WebAutomationHelper class and related
         functions for Selenium-based web automation.
 
 Example usage:
@@ -47,12 +47,10 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium_helper import WebAutomationHelper
 
 

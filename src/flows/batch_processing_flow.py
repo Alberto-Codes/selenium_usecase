@@ -2,7 +2,7 @@ from typing import List
 
 from prefect import flow, task
 
-from src.db.db_connect import session
+from src.db.db_connect import duckdb_session as session
 from src.services.batch_service import BatchService
 
 

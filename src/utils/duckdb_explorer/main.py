@@ -7,15 +7,17 @@ from config import DB_PATH
 from db_operations import initialize_connection, fetch_tables, fetch_columns, fetch_data
 from data_processing import construct_query, convert_df_to_csv
 
+
 @st.cache_resource
 def get_connection():
     """Initializes and caches the database connection.
 
     Returns:
-        duckdb.DuckDBPyConnection: A connection object to interact with the 
+        duckdb.DuckDBPyConnection: A connection object to interact with the
         database.
     """
     return initialize_connection(DB_PATH)
+
 
 # Initialize connection
 con = get_connection()
@@ -25,17 +27,18 @@ st.sidebar.title("Database Explorer")
 tables = fetch_tables(con)
 
 # Table selection
-selected_table = st.sidebar.selectbox('Select a table to explore', tables)
+selected_table = st.sidebar.selectbox("Select a table to explore", tables)
 
 # Fetch columns from the selected table
 columns = fetch_columns(con, selected_table)
 
 # Multiselect for columns
 selected_columns = st.sidebar.multiselect(
-    'Select columns to display', columns, default=columns)
+    "Select columns to display", columns, default=columns
+)
 
 # Optional: Add filtering options
-where_clause = st.sidebar.text_input('Enter WHERE clause (optional)')
+where_clause = st.sidebar.text_input("Enter WHERE clause (optional)")
 
 # Construct SQL query
 query = construct_query(selected_columns, selected_table, where_clause)
@@ -43,16 +46,17 @@ query = construct_query(selected_columns, selected_table, where_clause)
 # Execute and display the query with a progress spinner
 st.write(f"Executing Query: {query}")
 try:
-    with st.spinner('Fetching data...'):
+    with st.spinner("Fetching data..."):
         df = fetch_data(con, query)
     st.write(df)
 except Exception as e:
     st.error(f"An error occurred: {e}")
 
 # Real-time updates and data summary
-if st.sidebar.checkbox('Enable Real-time Updates'):
+if st.sidebar.checkbox("Enable Real-time Updates"):
     refresh_interval = st.sidebar.slider(
-        'Refresh interval (seconds)', min_value=1, max_value=60, value=5)
+        "Refresh interval (seconds)", min_value=1, max_value=60, value=5
+    )
     placeholder = st.empty()
 
     while True:
@@ -64,7 +68,7 @@ else:
     st.write(df)
 
 # Data summary
-if st.sidebar.checkbox('Show Summary'):
+if st.sidebar.checkbox("Show Summary"):
     st.write(df.describe())
 
 # Conditional alerts based on data
@@ -74,14 +78,15 @@ if df.shape[0] > 0 and selected_columns:  # Ensure there's data to check
 
 # Data visualization using Altair
 st.sidebar.subheader("Visualize Data")
-x_axis = st.sidebar.selectbox('Select X-axis for plot', columns)
-y_axis = st.sidebar.selectbox('Select Y-axis for plot', columns)
+x_axis = st.sidebar.selectbox("Select X-axis for plot", columns)
+y_axis = st.sidebar.selectbox("Select Y-axis for plot", columns)
 
-chart = alt.Chart(df).mark_circle(size=60).encode(
-    x=x_axis,
-    y=y_axis,
-    tooltip=[x_axis, y_axis]
-).interactive()
+chart = (
+    alt.Chart(df)
+    .mark_circle(size=60)
+    .encode(x=x_axis, y=y_axis, tooltip=[x_axis, y_axis])
+    .interactive()
+)
 
 st.altair_chart(chart, use_container_width=True)
 
@@ -97,7 +102,7 @@ st.download_button(
 
 # Custom HTML or widgets (Optional)
 st.sidebar.subheader("Additional Options")
-if st.sidebar.checkbox('Show Custom HTML'):
+if st.sidebar.checkbox("Show Custom HTML"):
     st.components.v1.html(
         """
         <div style="text-align: center;">

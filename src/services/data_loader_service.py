@@ -1,5 +1,4 @@
 import uuid
-from typing import Optional
 
 import pandas as pd
 from sqlalchemy.orm import Session

@@ -64,7 +64,7 @@ class PDFRepository:
             Optional[TblRCNPDF]: The updated PDF record, or None if the record was not found.
         """
         pdf_record = self.session.query(TblRCNPDF).filter_by(id=pdf_id).first()
-        if (pdf_record):
+        if pdf_record:
             pdf_record.pdf_blob = pdf_blob
             self.session.commit()
         return pdf_record
@@ -107,17 +107,14 @@ class PDFRepository:
 
         Args:
             batch_id (str): The ID of the batch to filter PDF records.
-        
+
         Returns:
             List[TblRCNPDF]: List of PDF records that have a non-null blob and match the batch ID.
         """
         return (
             self.session.query(TblRCNPDF)
             .filter(
-                and_(
-                    TblRCNPDF.batch_id == batch_id,
-                    TblRCNPDF.pdf_blob != None
-                )
+                and_(TblRCNPDF.batch_id == batch_id, TblRCNPDF.pdf_blob is not None)
             )
             .all()
         )

@@ -30,7 +30,8 @@
 		"vscode": {
 			"extensions": [
 				"GitHub.copilot-chat",
-				"eamodio.gitlens"
+				"eamodio.gitlens",
+				"charliermarsh.ruff"
 			]
 		}
 	}

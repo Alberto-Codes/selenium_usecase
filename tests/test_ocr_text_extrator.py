@@ -2,9 +2,8 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import cv2
 import numpy as np
 import pytest
 from ocr_text_extractor import OCRTextExtractor

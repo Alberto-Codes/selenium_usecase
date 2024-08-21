@@ -1,19 +1,19 @@
 """
-This script contains unit tests for the `PDFConverter` class using the pytest 
-framework. The tests ensure that the class initializes correctly and that the 
+This script contains unit tests for the `PDFConverter` class using the pytest
+framework. The tests ensure that the class initializes correctly and that the
 PDF conversion to images works as expected.
 
 Fixtures:
     sample_pdf_blob: Provides a sample PDF BLOB for testing.
 
 Tests:
-    test_initialization: Verifies that the `PDFConverter` class initializes 
+    test_initialization: Verifies that the `PDFConverter` class initializes
         correctly with the provided PDF BLOB.
-    test_convert_to_images: Tests the `convert_to_images` method to ensure it 
+    test_convert_to_images: Tests the `convert_to_images` method to ensure it
         returns a list of images, where each image has a `size` attribute.
 
 Modules:
-    - pdf_converter: Contains the `PDFConverter` class responsible for 
+    - pdf_converter: Contains the `PDFConverter` class responsible for
       converting PDF BLOBs into images.
 
 Example usage:

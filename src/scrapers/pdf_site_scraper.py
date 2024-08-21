@@ -1,3 +1,5 @@
+import os
+
 from src.utils.selenium_helper import WebAutomationHelper
 
 
@@ -11,21 +13,24 @@ class PDFSiteScraper:
         Initializes the PDFSiteScraper with a WebAutomationHelper.
 
         Args:
-            helper (WebAutomationHelper): The helper instance to interact with the website.
+            helper (WebAutomationHelper): The helper instance to interact with
+                the website.
         """
         self.helper = helper
 
     def download_pdf(
-        self, acctnumber: str, checknumber: str, amount: str, date: str
+        self, acctnumber: str, checknumber: str, amount: str, date: str, temp_dir: str
     ) -> str:
         """
         Executes the steps needed to download a PDF file.
 
         Args:
-            acctnumber (str): The account number.
-            checknumber (str): The check number.
+            acctnumber (str): The account number associated with the PDF.
+            checknumber (str): The check number associated with the PDF.
             amount (str): The amount associated with the check.
             date (str): The date of the check.
+            temp_dir (str): The temporary directory to store the downloaded
+                PDF.
 
         Returns:
             str: The path to the downloaded PDF.
@@ -51,5 +56,5 @@ class PDFSiteScraper:
         # Wait for the download to complete (implement logic to confirm download completion)
         self.helper.wait_for_element("popup_download_button")
 
-        # Return the path to the downloaded file (assumed standard path)
-        return "data/tmp/image.pdf"
+        # Assume the downloaded file is always named "Image.pdf" in the temp dir
+        return os.path.join(temp_dir, "Image.pdf")

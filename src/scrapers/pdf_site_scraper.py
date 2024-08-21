@@ -33,7 +33,8 @@ class PDFSiteScraper:
                 PDF.
 
         Returns:
-            str: The path to the downloaded PDF.
+            str: The path to the downloaded PDF. If no results are found,
+                returns "No Results Found".
         """
         # Navigate to the target page
         self.helper.navigate_to()
@@ -47,6 +48,14 @@ class PDFSiteScraper:
         # Click the search button to initiate the search
         self.helper.click_element("search_button")
 
+        # Handle potential scenarios
+        if self._handle_no_results_scenario():
+            return "No Results Found"
+
+        if self._handle_alternative_popup_scenario(temp_dir):
+            # If we handled an alternative popup, return early
+            return os.path.join(temp_dir, "Image.pdf")
+
         # Switch to the new window or frame that contains the download button
         self.helper.switch_to_new_window()
 
@@ -58,3 +67,40 @@ class PDFSiteScraper:
 
         # Assume the downloaded file is always named "Image.pdf" in the temp dir
         return os.path.join(temp_dir, "Image.pdf")
+
+    def _handle_no_results_scenario(self) -> bool:
+        """
+        Check if the "No Results" message is displayed and handle it.
+
+        Returns:
+            bool: True if the "No Results" scenario was handled, False otherwise.
+        """
+        no_results_selector = "div.no-results"  # Replace with the actual selector
+        if self.helper.element_exists(no_results_selector):
+            print("No Results Found for the provided criteria.")
+            return True
+        return False
+
+    def _handle_alternative_popup_scenario(self, temp_dir: str) -> bool:
+        """
+        Check for an alternative popup and handle it if present.
+
+        Args:
+            temp_dir (str): The temporary directory to store the downloaded PDF.
+
+        Returns:
+            bool: True if an alternative popup was handled, False otherwise.
+        """
+        alternative_popup_selector = (
+            "#alternative_popup"  # Replace with the actual selector
+        )
+        if self.helper.element_exists(alternative_popup_selector):
+            print("Alternative popup detected. Handling the scenario.")
+            self.helper.click_element("alternative_button")
+
+            # Now, assume this leads to the normal download popup
+            self.helper.switch_to_new_window()
+            self.helper.click_element("popup_download_button")
+            self.helper.wait_for_element("popup_download_button")
+            return True
+        return False

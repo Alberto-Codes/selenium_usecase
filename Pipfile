@@ -15,11 +15,14 @@ duckdb = "*"
 duckdb-engine = "*"
 prefect = "*"
 fuzzywuzzy = "*"
-
+teradatasqlalchemy = "*"
+keyring = "*"
+python-dotenv = "*"
 
 [dev-packages]
 ruff = "*"
 pytest = "*"
+pre-commit = "*"
 
 [requires]
 python_version = "3.12"

@@ -3,8 +3,8 @@ import shutil
 
 from sqlalchemy.orm import Session
 
-from src.db.repositories.pdf_repository import PDFRepository
 from src.db.repositories.input_repository import InputRepository
+from src.db.repositories.pdf_repository import PDFRepository
 from src.scrapers.pdf_site_scraper import PDFSiteScraper
 from src.services.pdf_processing_service import PDFProcessingService
 

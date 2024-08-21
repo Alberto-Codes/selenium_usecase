@@ -6,8 +6,8 @@ from src.db.db_connect import engine, get_session
 from src.db.repositories.input_repository import InputRepository
 from src.db.repositories.pdf_repository import PDFRepository
 from src.services.ocr_extraction_service import OCRExtractionService
-from src.services.pdf_processing_service import PDFProcessingService
 from src.services.payee_matching_service import PayeeMatchingService
+from src.services.pdf_processing_service import PDFProcessingService
 
 
 @task

@@ -1,14 +1,15 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.engine import Engine
-from teradatasqlalchemy import TeradataDialect
-from typing import Optional
 import os
+from contextlib import contextmanager
+
+# from teradatasqlalchemy import TeradataDialect
+from typing import Generator, Optional
+from urllib.parse import quote_plus
+
 import keyring
 from dotenv import load_dotenv
-from contextlib import contextmanager
-from urllib.parse import quote_plus
-from typing import Generator
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session, sessionmaker
 
 load_dotenv()
 
@@ -89,7 +90,7 @@ class DatabaseManager:
 
         self.teradata_engine = create_engine(
             connection_url,
-            dialect=TeradataDialect(),
+            # dialect=TeradataDialect(),
             connect_args={"authentication": "LDAP", "logmech": "LDAP"},
         )
         self.TeradataSession = sessionmaker(bind=self.teradata_engine)
@@ -129,7 +130,7 @@ class DatabaseManager:
         """
         if not self.TeradataSession:
             raise RuntimeError(
-                "Teradata engine not initialized. Call initialize_teradata() " "first."
+                "Teradata engine not initialized. Call initialize_teradata() first."
             )
         session = self.TeradataSession()
         try:

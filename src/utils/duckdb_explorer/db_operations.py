@@ -1,6 +1,7 @@
+from typing import List
+
 import duckdb
 import pandas as pd
-from typing import List
 
 
 def initialize_connection(db_path: str) -> duckdb.DuckDBPyConnection:

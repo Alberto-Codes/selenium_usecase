@@ -1,11 +1,13 @@
 # main.py
 
-import streamlit as st
-import altair as alt
 import time
-from config import DB_PATH
-from db_operations import initialize_connection, fetch_tables, fetch_columns, fetch_data
+
+import altair as alt
+import streamlit as st
 from data_processing import construct_query, convert_df_to_csv
+from db_operations import fetch_columns, fetch_data, fetch_tables, initialize_connection
+
+from config import DB_PATH
 
 
 @st.cache_resource

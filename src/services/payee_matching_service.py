@@ -2,9 +2,9 @@ from typing import Dict, List, Tuple
 
 from sqlalchemy.orm import Session
 
+from src.db.repositories.image_repository import ImageRepository
 from src.db.repositories.input_repository import InputRepository
 from src.db.repositories.ocr_result_repository import OCRResultRepository
-from src.db.repositories.image_repository import ImageRepository
 from src.utils.payee_matcher import PayeeMatcher
 
 

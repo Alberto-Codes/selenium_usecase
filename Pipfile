@@ -18,6 +18,7 @@ fuzzywuzzy = "*"
 teradatasqlalchemy = "*"
 keyring = "*"
 python-dotenv = "*"
+pytest-mock = "*"
 
 [dev-packages]
 ruff = "*"

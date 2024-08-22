@@ -9,27 +9,29 @@ from src.utils.selenium_helper import WebAutomationHelper
 
 
 @task
-def process_record(
-    record, download_service: DownloadService, scraper: PDFSiteScraper
-) -> None:
+def process_records(records, download_service: DownloadService) -> None:
     """
-    Processes a single record by downloading the associated PDF and handling any errors.
+    Processes multiple records by downloading the associated PDFs, handling any errors,
+    and reusing the same browser window for all records.
 
     Args:
-        record: The record containing the details for downloading the PDF.
+        records: The list of records containing the details for downloading the PDFs.
         download_service (DownloadService): The service used to download and store PDFs.
-        scraper (PDFSiteScraper): Scraper class to execute the web download steps.
 
     Returns:
         None
     """
-    try:
-        pdf_path = download_service.download_pdf(record, scraper)
-        print(
-            f"Successfully downloaded and saved PDF for record {record.id} to {pdf_path}"
-        )
-    except Exception as e:
-        print(f"Failed to download for record {record.id}: {e}")
+    with WebAutomationHelper() as helper:
+        scraper = PDFSiteScraper(helper)
+
+        for record in records:
+            try:
+                pdf_path = download_service.download_pdf(record, scraper)
+                print(
+                    f"Successfully downloaded and saved PDF for record {record.id} to {pdf_path}"
+                )
+            except Exception as e:
+                print(f"Failed to download for record {record.id}: {e}")
 
 
 @flow
@@ -55,12 +57,8 @@ def pdf_batch_download_flow(batch_id: str, limit: int = 10) -> None:
             print(f"No pending records found for batch {batch_id}")
             return
 
-        # Initialize the WebAutomationHelper (and the browser session) once
-        with WebAutomationHelper() as helper:
-            scraper = PDFSiteScraper(helper)
-
-            for record in records:
-                process_record(record, download_service, scraper)
+        # Process all records in one go, using the same browser session
+        process_records(records, download_service)
 
         batch_repo.update_batch_status(batch_id, "completed")
         print(f"Batch {batch_id} processing complete.")

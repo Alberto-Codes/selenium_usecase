@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from src.utils.selenium_helper import WebAutomationHelper
 
@@ -20,7 +21,7 @@ class PDFSiteScraper:
 
     def download_pdf(
         self, acctnumber: str, checknumber: str, amount: str, date: str, temp_dir: str
-    ) -> str:
+    ) -> Optional[str]:
         """
         Executes the steps needed to download a PDF file.
 
@@ -33,24 +34,20 @@ class PDFSiteScraper:
                 PDF.
 
         Returns:
-            str: The path to the downloaded PDF. If no results are found,
-                returns "No Results Found".
+            The path to the downloaded PDF, or None if no results are found.
         """
         # Navigate to the target page
         self.helper.navigate_to()
 
         # Input the necessary data into the form fields
-        self.helper.input_data("acct_number", acctnumber)
-        self.helper.input_data("check_number", checknumber)
-        self.helper.input_data("amount", amount)
-        self.helper.input_data("date", date)
+        self._input_form_data(acctnumber, checknumber, amount, date)
 
         # Click the search button to initiate the search
         self.helper.click_element("search_button")
 
         # Handle potential scenarios
         if self._handle_no_results_scenario():
-            return "No Results Found"
+            return None
 
         if self._handle_alternative_popup_scenario(temp_dir):
             # If we handled an alternative popup, return early
@@ -68,12 +65,23 @@ class PDFSiteScraper:
         # Assume the downloaded file is always named "Image.pdf" in the temp dir
         return os.path.join(temp_dir, "Image.pdf")
 
+    def _input_form_data(
+        self, acctnumber: str, checknumber: str, amount: str, date: str
+    ) -> None:
+        """
+        Input the necessary data into the form fields.
+        """
+        self.helper.input_data("acct_number", acctnumber)
+        self.helper.input_data("check_number", checknumber)
+        self.helper.input_data("amount", amount)
+        self.helper.input_data("date", date)
+
     def _handle_no_results_scenario(self) -> bool:
         """
         Check if the "No Results" message is displayed and handle it.
 
         Returns:
-            bool: True if the "No Results" scenario was handled, False otherwise.
+            True if the "No Results" scenario was handled, False otherwise.
         """
         no_results_selector = "div.no-results"  # Replace with the actual selector
         if self.helper.element_exists(no_results_selector):
@@ -89,7 +97,7 @@ class PDFSiteScraper:
             temp_dir (str): The temporary directory to store the downloaded PDF.
 
         Returns:
-            bool: True if an alternative popup was handled, False otherwise.
+            True if an alternative popup was handled, False otherwise.
         """
         alternative_popup_selector = (
             "#alternative_popup"  # Replace with the actual selector

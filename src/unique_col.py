@@ -1,22 +1,50 @@
-from py_keys import get_keys
 import pandas as pd
+from itertools import combinations
+import hashlib
 
-# Step 1: Load your data into a DataFrame
-df = pd.read_csv("table.csv")
+# Load the CSV into a DataFrame
+df = pd.read_csv('table.csv')
 
-# Step 2: Use Py-Keys to get initial candidate keys
-initial_keys = get_keys(df)
-print("Initial candidate keys:", initial_keys)
+def hash_combination(row, columns):
+    """Generate a hash for a given row based on the specified columns."""
+    combined_values = ''.join([str(row[col]) for col in columns])
+    return hashlib.md5(combined_values.encode()).hexdigest()
 
-# Step 3: Filter down using custom logic for minimal unique sets
-minimal_keys = []  # This will store the refined set of minimal unique keys
+def find_minimal_unique_combinations(df, max_combo=4):
+    """
+    Find the minimal unique set of columns that identify rows uniquely using hash-based detection.
+    
+    Args:
+        df (pd.DataFrame): Input DataFrame.
+        max_combo (int): Maximum number of columns to combine.
+        
+    Returns:
+        dict: A dictionary mapping each row index to its minimal unique combination of columns.
+    """
+    # Step 1: Rank columns by their individual uniqueness
+    column_uniqueness = {col: df[col].nunique() for col in df.columns}
+    sorted_columns = sorted(column_uniqueness, key=column_uniqueness.get, reverse=True)
 
-# Sort by length to ensure minimal sets are found first
-sorted_keys = sorted(initial_keys, key=len)
+    # Step 2: Generate combinations and compute hashes
+    min_unique_columns = None
+    min_column_length = float('inf')
 
-# Step 4: Check for sub-key relationships and only keep minimal ones
-for key in sorted_keys:
-    if not any(set(key).issubset(set(other)) for other in minimal_keys):
-        minimal_keys.append(key)
+    # Store the hash uniqueness score for each combination
+    for r in range(1, max_combo + 1):
+        for combo in combinations(sorted_columns, r):
+            # Generate a hash for each row based on this column combination
+            hash_set = set(df.apply(lambda row: hash_combination(row, combo), axis=1))
 
-print("Minimal unique key combinations:", minimal_keys)
+            # Check if this combination is unique for all rows
+            if len(hash_set) == len(df):
+                if len(combo) < min_column_length:
+                    min_unique_columns = combo
+                    min_column_length = len(combo)
+
+    return min_unique_columns
+
+# Find the minimal unique combination using hash-based optimization
+minimal_unique_combination = find_minimal_unique_combinations(df)
+
+# Display the minimal unique column combination
+print(f"The smallest unique identifier set is: {minimal_unique_combination}")

@@ -1,27 +1,45 @@
 import pandas as pd
 from itertools import combinations
 
-# Load the CSV into a DataFrame
-df = pd.read_csv('your_file.csv')
+# Load the CSV into a DataFrame (Assuming 'table.csv' is the file)
+df = pd.read_csv('table.csv')
 
-# Calculate the degree of uniqueness for each column
-unique_ratios = {col: df[col].nunique() / len(df) for col in df.columns}
+def find_minimal_unique_combinations(df, max_combo=4):
+    """
+    Finds the minimal unique set of columns that identify rows uniquely.
+    
+    Args:
+        df (pd.DataFrame): Input DataFrame.
+        max_combo (int): Maximum number of columns to combine.
+        
+    Returns:
+        dict: A dictionary mapping each row index to its minimal unique combination of columns.
+    """
+    # Dictionary to store the minimal unique column combinations for each row
+    row_to_key = {}
 
-# Sort columns based on uniqueness ratio in descending order
-sorted_columns = sorted(unique_ratios, key=unique_ratios.get, reverse=True)
+    # Step 1: Rank columns by their individual uniqueness
+    column_uniqueness = {col: df[col].nunique() for col in df.columns}
+    sorted_columns = sorted(column_uniqueness, key=column_uniqueness.get, reverse=True)
 
-# Function to find the minimal combination of columns for uniqueness
-def find_minimal_unique_combination(dataframe, columns):
-    # Iterate through combinations of columns from size 1 up to the number of columns
-    for r in range(1, len(columns) + 1):
-        for combo in combinations(columns, r):
-            # Check if this combination of columns is unique
-            if dataframe.duplicated(subset=list(combo)).sum() == 0:
-                return combo  # Return the first minimal unique combination
+    # Step 2: Generate all possible combinations of columns
+    for r in range(1, max_combo + 1):
+        for combo in combinations(sorted_columns, r):
+            # Check if the combination is already sufficient for any row
+            if all(idx in row_to_key for idx in range(len(df))):
+                return row_to_key
 
-# Identify the minimal unique set of columns using the sorted columns
-minimal_unique_columns = find_minimal_unique_combination(df, sorted_columns)
+            # Get the rows that this combination can uniquely identify
+            unique_values = df[list(combo)].duplicated(keep=False)
+            for idx, is_duplicate in enumerate(unique_values):
+                if not is_duplicate and idx not in row_to_key:
+                    row_to_key[idx] = combo
 
-# Display the uniqueness ranking and the minimal combination
-print(f"Column Uniqueness Ranking: {unique_ratios}")
-print(f"The smallest unique identifier set is: {minimal_unique_columns}")
+    return row_to_key
+
+# Run the optimized function to find minimal unique column combinations
+minimal_unique_keys = find_minimal_unique_combinations(df)
+
+# Display the unique identifiers for each row
+for row_idx, columns in minimal_unique_keys.items():
+    print(f"Row {row_idx} can be uniquely identified by columns: {columns}")
